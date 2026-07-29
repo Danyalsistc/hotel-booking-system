@@ -209,9 +209,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         $checkOutStr = $checkOut->format('Y-m-d');
         $nights      = booking_nights($checkIn, $checkOut);
 
-        $conn->begin_transaction();
+        // Tracks whether a transaction is actually open. The catch block uses
+        // it so rollback() is only ever called when there is something to roll
+        // back - calling it otherwise would raise a warning. It also stays
+        // false if begin_transaction() itself fails, which is why that call now
+        // sits inside the try: a failure there is reported through exactly the
+        // same generic error path as any other database problem, with no raw
+        // database message shown to the visitor.
+        $inTransaction = false;
 
         try {
+            $conn->begin_transaction();
+            $inTransaction = true;
+
             // --- Step 1: lock the room type row (mutex) and read the
             //             authoritative capacity and price from the database.
             $typeStmt = $conn->prepare(
@@ -228,10 +238,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
             if (!$typeFound) {
                 $conn->rollback();
+                $inTransaction = false;
                 $errors['room_type_id'] = 'That room type is no longer available.';
             } elseif ($guestCount > (int) $lockedCapacity) {
                 // Re-checked against the locked row, not the earlier read.
                 $conn->rollback();
+                $inTransaction = false;
                 $errors['guest_count'] = sprintf(
                     'The %s sleeps a maximum of %d guests.',
                     (string) $lockedName,
@@ -279,6 +291,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
                 if (!$roomFound) {
                     $conn->rollback();
+                    $inTransaction = false;
                     $errors['form'] = sprintf(
                         'We have no %s available between %s and %s. Please try different dates.',
                         (string) $lockedName,
@@ -344,16 +357,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
                     if (!$inserted) {
                         $conn->rollback();
+                        $inTransaction = false;
                         error_log('[Hotel Booking System] Could not generate a unique booking reference.');
                         $errors['form'] = 'We could not complete your booking right now. Please try again shortly.';
                     } else {
                         $conn->commit();
+                        $inTransaction = false;
 
                         // Redirect-after-POST: refreshing the confirmation page
                         // cannot create a second booking.
+                        //
+                        // The wording deliberately does not call the booking
+                        // "confirmed": it is created with status pending and
+                        // stays that way until an administrator confirms it.
                         flash_set(
                             'success',
-                            'Booking confirmed as pending. Your reference is ' . $reference . '.'
+                            'Your booking request has been submitted. Its current status is '
+                                . 'pending. Your reference is ' . $reference . '.'
                         );
                         auth_redirect('customer-dashboard.php');
                     }
@@ -362,11 +382,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
         } catch (mysqli_sql_exception $exception) {
 
-            // Roll back whatever is still open, then report generically.
-            try {
-                $conn->rollback();
-            } catch (mysqli_sql_exception $ignored) {
-                // Nothing further can be done about a failed rollback here.
+            // Only roll back when a transaction was actually opened. If
+            // begin_transaction() was what failed, there is nothing to undo and
+            // calling rollback() here would itself raise a warning.
+            if ($inTransaction) {
+                try {
+                    $conn->rollback();
+                } catch (mysqli_sql_exception $ignored) {
+                    // Nothing further can be done about a failed rollback here.
+                }
+
+                $inTransaction = false;
             }
 
             $code = (int) $exception->getCode();

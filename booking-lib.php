@@ -18,12 +18,13 @@ declare(strict_types=1);
 /**
  * Timezone used for every "what is today" decision.
  *
- * ASSUMPTION: this is an Australian demonstration hotel (prices are in AUD),
- * so dates are judged in Australian Western Standard Time rather than in
- * whatever timezone the web server happens to be configured with. Change this
- * one constant if the hotel is located elsewhere.
+ * This is an Australian demonstration hotel (prices are in AUD) and the
+ * project is being completed in New South Wales, so dates are judged in
+ * Australian Eastern time rather than in whatever timezone the web server
+ * happens to be configured with. Change this one constant if the hotel is
+ * located elsewhere.
  */
-const BOOKING_TIMEZONE = 'Australia/Perth';
+const BOOKING_TIMEZONE = 'Australia/Sydney';
 
 /** Longest stay a single booking may cover. */
 const BOOKING_MAX_NIGHTS = 30;

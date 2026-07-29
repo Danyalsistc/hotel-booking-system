@@ -353,7 +353,7 @@ JavaScript is disabled the booking process still works correctly.
 | Guests | 1 up to the room type's `capacity` |
 | Starting status | `pending` |
 
-Dates are judged in the **Australia/Perth** timezone (see `BOOKING_TIMEZONE`
+Dates are judged in the **Australia/Sydney** timezone (see `BOOKING_TIMEZONE`
 in `booking-lib.php`), not in whatever timezone the web server happens to use.
 
 ### How availability works
