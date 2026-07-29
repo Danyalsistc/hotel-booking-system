@@ -573,7 +573,7 @@ written justification. See [`docs/DATABASE_DESIGN.md`](docs/DATABASE_DESIGN.md).
 ├── main.js                 Home page hero video control
 ├── booknow.js              Booking form enhancement only (no localStorage)
 ├── room.js                 Room page gallery
-├── TESTING.md              Test cases (none executed yet)
+├── TESTING.md              Executed test cases, results and environment limitations
 └── docs/
     ├── DATABASE_DESIGN.md  Schema, ER diagram, assumptions
     ├── FRONT_END_DESIGN.md Visual design evidence
