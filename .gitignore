@@ -16,8 +16,10 @@
 
 # --- Local configuration overrides -----------------------------------------
 # config.php itself IS tracked: it contains only XAMPP defaults and reads real
-# values from environment variables. Machine-specific overrides go in these
-# files instead, and are never committed.
+# values from ENVIRONMENT VARIABLES, which is the only override mechanism the
+# application supports. The patterns below are defensive only - they make sure
+# that if anyone ever drops a machine-specific config file here, it cannot be
+# committed by accident.
 config.local.php
 config.local.*
 *.local.php

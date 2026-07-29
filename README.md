@@ -210,8 +210,15 @@ With Apache and MySQL running and the project in `htdocs`:
 |---|---|
 | Home page | <http://localhost/hotel-booking-system/index.html> |
 | Booking form | <http://localhost/hotel-booking-system/booknow.html> |
-| Login | <http://localhost/hotel-booking-system/login.html> |
-| Register | <http://localhost/hotel-booking-system/register.html> |
+| **Login** | <http://localhost/hotel-booking-system/login.php> |
+| **Register** | <http://localhost/hotel-booking-system/register.php> |
+| Customer dashboard | `customer-dashboard.php` (requires login) |
+| Administrator dashboard | `admin-dashboard.php` (requires an admin account) |
+
+`login.php` and `register.php` are the **canonical** authentication pages.
+The old `login.html` and `register.html` still exist so bookmarks do not
+break, but they no longer contain forms — each is a small page that redirects
+to its `.php` equivalent.
 
 Adjust the folder name if you used a different one, and add `:8080` if you
 moved Apache off port 80.
@@ -219,6 +226,83 @@ moved Apache off port 80.
 **Open the site through `http://localhost/`, not by double-clicking the HTML
 files.** Opening a file directly gives a `file:///` address, and PHP will not
 execute — you would see raw source code instead of a page.
+
+---
+
+## Accounts, roles and authentication
+
+### Roles
+
+Every account has a `role`, stored in `users.role`:
+
+| Role | Lands on | Can access |
+|---|---|---|
+| `customer` | `customer-dashboard.php` | Their own dashboard only |
+| `admin` | `admin-dashboard.php` | The administrator dashboard |
+
+New registrations are **always** created as `customer`. The registration form
+never sends a role, and `register.php` omits the column from its `INSERT` so
+the database default applies — a crafted form cannot create an administrator.
+
+A customer who tries to open `admin-dashboard.php` is sent back to their own
+dashboard with an explanation. A signed-out visitor is sent to the login page.
+
+### Registration flow
+
+1. Visit `register.php`.
+2. Enter full name, email address, password and password confirmation.
+   Passwords must be at least 8 characters and the two must match.
+3. The server validates every field, normalises the email to lower case, and
+   checks for an existing account using a prepared statement. The `UNIQUE`
+   key on `users.email` is the final guarantee, so two simultaneous
+   registrations of the same address cannot both succeed.
+4. On success the password is hashed with `password_hash()` and the account is
+   created, then you are redirected to `login.php` with a confirmation message.
+
+Registration does **not** log you in automatically — you log in explicitly.
+
+### Login flow
+
+1. Visit `login.php`.
+2. Enter your email address and password.
+3. The server looks the account up with a prepared statement and verifies the
+   password with `password_verify()` against `users.password_hash`.
+4. On success the session ID is regenerated, your user ID, name and role are
+   stored in the session, and you are redirected to the dashboard for your
+   role.
+
+An unknown email address and an incorrect password produce the **same**
+message, so the login page cannot be used to discover which addresses are
+registered.
+
+### Logging out
+
+Logout is **POST only** and requires a CSRF token, so it is done with the
+"Log out" button on a dashboard, not by following a link. Visiting
+`logout.php` directly in the address bar does **not** log you out — it shows a
+confirmation button instead. This prevents another site (or a browser
+prefetching a link) from signing you out without your intent.
+
+### Creating an administrator on your local machine
+
+No administrator account ships with this project — seeding one with a known
+password would be a security defect. To create one:
+
+1. Register normally at `register.php` with the address you want to use.
+2. Open <http://localhost/phpmyadmin/>, select `hotel_booking`, open the
+   **SQL** tab and run:
+
+   ```sql
+   UPDATE users SET role = 'admin' WHERE email = 'your.email@example.com';
+   ```
+
+3. Log out and log back in. Your session picks up the new role at login, so
+   you must sign in again for the change to take effect.
+4. You will now land on `admin-dashboard.php`.
+
+Never set a password directly in phpMyAdmin — the column stores a hash, not a
+password, and typing a plaintext value there would make the account
+unusable.
 
 ---
 
@@ -231,20 +315,34 @@ This project is mid-rebuild. Honest status of each area:
 | Database schema (`database.sql`) | ✅ Written — four tables, seeded room data |
 | Database connection (`config.php`) | ✅ Hardened — env vars, utf8mb4, safe error handling |
 | Version control + documentation | ✅ Established |
+| Registration (`register.php`) | ✅ Rebuilt — prepared statements, duplicate-email check, hashed passwords, CSRF |
+| Login (`login.php`) | ✅ Rebuilt — prepared statements, `password_verify`, generic errors, CSRF |
+| Sessions and roles | ✅ Hardened — HttpOnly, SameSite=Lax, strict mode, ID regenerated at login |
+| Logout (`logout.php`) | ✅ POST + CSRF only |
+| Customer dashboard | ⚠️ Exists and is protected, but is a **shell** — no booking history yet |
+| Admin dashboard | ⚠️ Exists and is protected by role, but is a **shell** — no booking management yet |
 | Static room pages | ⚠️ Display correctly, but content is hard-coded, not read from the database |
 | Home page layout | ❌ Known structural defect (unclosed element) |
-| Registration | ❌ Not secure — no duplicate-email check, vulnerable to SQL injection |
-| Login | ❌ Vulnerable to SQL injection; redirects to a page that does not exist |
-| Bookings | ❌ Stored in browser `localStorage`, never reach MySQL; no check-out date |
+| **Bookings** | ❌ **Still stored in browser `localStorage`, never reach MySQL; no check-out date** |
 | Availability checking | ❌ Not implemented (placeholder alert only) |
-| Customer dashboard | ❌ Does not exist |
-| Admin dashboard | ❌ Publicly accessible, hard-coded totals, JavaScript error on load |
 | Testing | ❌ No tests written or executed yet |
 
-**No database import or PHP execution has been verified on this machine** —
-PHP and MySQL were not available in the environment where the schema was
-authored. The import instructions above must be run manually to confirm the
-schema loads cleanly.
+### Booking is not finished
+
+Authentication works, but **booking does not**. `booknow.html` and
+`booknow.js` are unchanged: the form still writes to browser `localStorage`,
+still has no check-out date, and nothing it produces reaches the `bookings`
+table or either dashboard. Database-backed booking, the check-out date and
+availability checking are all **Phase 3** work.
+
+### Nothing here has been run
+
+**No PHP or MySQL runtime testing has been performed on the machine where
+this code was written** — neither PHP nor MySQL was available there. That
+means the database import, the registration and login flows, the session and
+CSRF behaviour and the role redirects have all been written and reviewed by
+inspection, but **not executed**. Treat every flow described above as
+untested until you have run it yourself in XAMPP.
 
 ---
 
@@ -295,10 +393,18 @@ written justification. See [`docs/DATABASE_DESIGN.md`](docs/DATABASE_DESIGN.md).
 ├── README.md               This file
 ├── database.sql            Schema + development seed data
 ├── config.php              Database connection (mysqli)
-├── login.php               ⚠️ Legacy — insecure, scheduled for rewrite
-├── register.php            ⚠️ Legacy — insecure, scheduled for rewrite
-├── *.html                  Page templates
-├── *.css                   Stylesheets
+├── auth.php                Session, role, CSRF, escaping and flash helpers
+├── login.php               Login page (canonical)
+├── register.php            Registration page (canonical)
+├── logout.php              Logout (POST + CSRF only)
+├── customer-dashboard.php  Protected customer dashboard (shell)
+├── admin-dashboard.php     Protected administrator dashboard (shell)
+├── login.html              Legacy redirect to login.php
+├── register.html           Legacy redirect to register.php
+├── admin-dashboard.html    Legacy notice — no administrator content
+├── booknow.html            ⚠️ Still localStorage-based; Phase 3 rewrites this
+├── *.html                  Room pages and home page
+├── *.css                   Stylesheets (css.css, dashboard.css, …)
 ├── *.js                    Client-side scripts
 ├── docs/
 │   └── DATABASE_DESIGN.md  Schema documentation and ER diagram

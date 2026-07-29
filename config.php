@@ -21,9 +21,10 @@
  *      DB_USER   default: root
  *      DB_PASS   default: (empty)
  *
- *  To override locally WITHOUT committing credentials, either set the
- *  variables above in your environment, or create config.local.php (already
- *  listed in .gitignore) and define them there before this file is included.
+ *  To override the defaults, set those environment variables (for XAMPP, via
+ *  SetEnv in httpd.conf or a system environment variable). Environment
+ *  variables are the ONLY override mechanism this file supports - there is no
+ *  local configuration include, so nothing here silently loads another file.
  * ===========================================================================
  */
 

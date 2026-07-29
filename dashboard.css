@@ -1,0 +1,277 @@
+/* ===========================================================================
+   Hotel Booking System - Dashboard styles
+   ICT304 Capstone 2
+
+   Used by customer-dashboard.php and admin-dashboard.php.
+   Kept visually consistent with the existing site: the #333 dark bar from
+   index.css, the #3f22ff accent used across the project, and the same
+   #f4f4f4 page background.
+   =========================================================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.6;
+    color: #222;
+    background-color: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- Keyboard accessibility ---------------------------------------------- */
+
+/* Visible focus indicator. The site previously had none, which made it
+   impossible to tell where the keyboard was. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+    outline: 3px solid #1a0c99;
+    outline-offset: 2px;
+}
+
+/* Skip link: hidden until focused, then anchored top-left. */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: #ffffff;
+    color: #1a0c99;
+    padding: 12px 20px;
+    z-index: 100;
+    font-weight: bold;
+}
+
+.skip-link:focus {
+    left: 0;
+}
+
+/* --- Header -------------------------------------------------------------- */
+
+.dash-header {
+    background-color: #333333;
+    color: #ffffff;
+    padding: 15px 20px;
+}
+
+.dash-header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.dash-brand {
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.dash-badge {
+    display: inline-block;
+    background-color: #ffffff;
+    color: #1a0c99;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.dash-nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+}
+
+.dash-nav a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 6px 4px;
+    border-bottom: 2px solid transparent;
+}
+
+.dash-nav a:hover,
+.dash-nav a:focus {
+    border-bottom-color: #ffffff;
+    text-decoration: underline;
+}
+
+.logout-form {
+    display: inline;
+}
+
+/* White text on #3f22ff gives roughly 7.3:1 contrast, which passes WCAG AA
+   and AAA for normal text. */
+.logout-btn {
+    background-color: #3f22ff;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 9px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    background-color: #2f16d6;
+}
+
+/* --- Main content -------------------------------------------------------- */
+
+.dash-main {
+    flex: 1;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.dash-main h1 {
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.dash-subtitle {
+    color: #555555;
+    margin-bottom: 25px;
+}
+
+.panel {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.panel h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.panel p + p {
+    margin-top: 12px;
+}
+
+/* Neutral "work in progress" callout. Amber on white reads clearly and does
+   not imply an error state. */
+.notice {
+    background-color: #fff8e1;
+    border-left: 4px solid #b8860b;
+    padding: 12px 15px;
+    border-radius: 4px;
+}
+
+.link-list {
+    list-style: none;
+    margin-top: 10px;
+}
+
+.link-list li {
+    margin-bottom: 10px;
+}
+
+.link-list a {
+    color: #1a0c99;
+    font-weight: bold;
+}
+
+.link-list.plain {
+    list-style: disc;
+    padding-left: 20px;
+}
+
+.link-list.plain li {
+    margin-bottom: 6px;
+}
+
+code {
+    background-color: #eeeeee;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.95em;
+}
+
+/* --- Flash messages ------------------------------------------------------ */
+
+.flash {
+    padding: 12px 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.flash-success {
+    background-color: #e6f4ea;
+    color: #14532d;
+    border-left: 4px solid #14532d;
+}
+
+.flash-error {
+    background-color: #fdeaea;
+    color: #7f1d1d;
+    border-left: 4px solid #7f1d1d;
+}
+
+/* --- Footer -------------------------------------------------------------- */
+
+.dash-footer {
+    background-color: #333333;
+    color: #ffffff;
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+}
+
+/* --- Responsive ---------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .dash-header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .dash-nav ul {
+        gap: 15px;
+    }
+
+    .dash-main {
+        padding: 20px 15px;
+    }
+
+    .dash-main h1 {
+        font-size: 24px;
+    }
+
+    .panel {
+        padding: 20px 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dash-nav ul {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .logout-btn {
+        width: 100%;
+    }
+}

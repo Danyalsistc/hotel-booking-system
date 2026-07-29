@@ -128,10 +128,10 @@ duplicate structure for no benefit.
 - **No account is seeded.** Shipping an administrator with a known password
   would be a security defect, so `users` is empty after import.
 
-> **Note for the authentication phase:** the current `login.php` reads a
-> column called `password`, whereas this schema defines `password_hash`. This
-> is a deliberate rename for clarity, and `login.php` must be updated to match
-> when it is rewritten with prepared statements.
+> **Resolved in Phase 2:** the original `login.php` read a column called
+> `password`, whereas this schema defines `password_hash`. `login.php` has
+> since been rewritten and now selects `password_hash`, so the code and the
+> schema agree. No table in this schema has a `password` column.
 
 ---
 
@@ -390,9 +390,15 @@ index supports listing administrators.
 
 To be explicit about what this schema does **not** do on its own:
 
-- No application code reads or writes these tables yet.
-- The overlap check described above is a *plan*, not existing code.
-- `login.php` and `register.php` still use unsafe string-concatenated SQL and
-  still reference the old `password` column name.
-- The booking form still writes to browser `localStorage`.
-- No data has been imported, and **no test of this schema has been executed**.
+- Only the `users` table is used by application code so far. `register.php`
+  inserts into it and `login.php` reads from it, both with prepared
+  statements (Phase 2).
+- `room_types`, `rooms` and `bookings` are **not read or written by any code
+  yet**. They are defined and seeded, but nothing queries them.
+- The availability overlap check described above is a *plan*, not existing
+  code.
+- The booking form still writes to browser `localStorage`. Nothing reaches
+  the `bookings` table.
+- No data has been imported, and **no test of this schema has been executed**
+  — neither PHP nor MySQL was available in the environment where it was
+  written.
