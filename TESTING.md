@@ -9,9 +9,21 @@
 > prediction. Tests that were **not** run are listed explicitly in
 > [Not executed](#not-executed) and are not marked as passing.
 >
-> **Result: 123 automated checks executed — 123 pass, 0 fail** (after the
-> three defects in [Defects found and fixed](#defects-found-and-fixed) were
-> repaired and every suite re-run).
+> **Result: 130 application checks executed — 130 passed, 0 application
+> failures** (after the two defects in
+> [Defects found and fixed](#defects-found-and-fixed) were repaired and every
+> suite re-run).
+>
+> **One further check, TC-71-env, is an environment-capability check, not an
+> application test.** It records that PHP's built-in development server is
+> single-threaded on Windows. It is deliberately reported as a limitation of
+> the test environment, is **not** an application defect, and is **not**
+> counted among the 130 application checks — neither as a pass nor as a
+> failure. See [section 8](#8-concurrency).
+>
+> Alongside the 130 application checks, this round also covered 11 PHP files
+> by syntax lint and 24 page-and-viewport combinations by visual measurement;
+> those are reported in their own sections rather than folded into the count.
 
 ---
 
@@ -64,19 +76,62 @@ Git, or in any screenshot.
 
 ## Summary
 
-| Suite | Checks | Pass | Fail |
+### Application checks
+
+Each row below counts the individual result rows in that section's table.
+
+| Suite | Checks | Passed | Failed |
 |---|---|---|---|
-| 1. PHP syntax | 11 | 11 | 0 |
-| 2. Database import and constraints | 12 | 12 | 0 |
+| 2. Database import and constraints | 13 | 13 | 0 |
 | 3. Registration | 16 | 16 | 0 |
-| 4. Login, session, logout | 14 | 14 | 0 |
+| 4. Login, session and logout | 15 | 15 | 0 |
 | 5. Access control | 6 | 6 | 0 |
 | 6. Booking | 30 | 30 | 0 |
-| 7. Availability and overlap | 22 | 22 | 0 |
-| 8. Concurrency | 4 | 3 | 1 (environment limit, not a defect) |
+| 7. Availability and overlap | 21 | 21 | 0 |
+| 8. Concurrency (application checks only) | 3 | 3 | 0 |
 | 9. Administrator | 22 | 22 | 0 |
-| 10. Escaping and accessibility markup | 9 | 9 | 0 |
-| 11. Visual / responsive | 24 pages×viewports | 24 | 0 |
+| 10. Escaping and accessibility markup | 5 | 5 | 0 |
+| **Total** | **131 rows / 130 distinct** | **130** | **0** |
+
+**How the total reconciles.** The result tables in sections 2–10 contain
+**132 rows** in all. Of those:
+
+- **1 row is the environment-capability check** TC-71-env, which is not an
+  application test and is excluded (see the next table). That leaves **131
+  application rows**, which is what the Checks column above sums to.
+- **1 application test is listed twice.** TC-103b (a guest attempting an
+  administrator action) appears under both *Access control* and
+  *Administrator* because it is relevant to both. It is one test and is
+  counted **once**.
+
+So: 132 rows − 1 environment check − 1 repeated listing =
+**130 distinct application checks, 130 passed, 0 failed.**
+
+A separate defect in the numbering was corrected at the same time: **TC-06b**
+had been used for two *different* tests. The booking-page one has been
+renumbered **TC-06c**, so every test now has a unique identifier.
+
+### Environment-capability check — counted separately
+
+| ID | Check | Result |
+|---|---|---|
+| TC-71-env | Can PHP's built-in development server serve concurrent requests? | **No — single-threaded on Windows.** Environment limitation, **not an application defect** |
+
+This check measures the *test environment*, not the application. It is
+excluded from the 130 application checks above and is not reported as either
+an application pass or an application failure. It is retained because it is
+what justifies the two-server workaround described in
+[section 8](#8-concurrency).
+
+### Other verification performed
+
+| Activity | Coverage | Result |
+|---|---|---|
+| 1. PHP syntax lint | 11 files | 11 clean, 0 errors |
+| 11. Visual / responsive measurement | 8 pages × 3 viewports = 24 | 24 clean |
+
+These are verification activities rather than pass/fail application test
+cases, so they are reported separately and are not added to the 130.
 
 ---
 
@@ -187,7 +242,7 @@ Re-linted after every code change in this phase; still 11/11 clean.
 | ID | Test | Expected | Actual | Result |
 |---|---|---|---|---|
 | TC-06a | Booking page loads for a customer | 200 | 200 | **Pass** |
-| TC-06b | All six room types listed | 6 options | 6 | **Pass** |
+| TC-06c | All six room types listed | 6 options | 6 | **Pass** |
 | TC-48a | Both date fields present | check_in + check_out | Both present | **Pass** |
 | TC-40 | All six room pages preselect correctly | Each selects its own type | 1→1, 2→2, 3→3, 4→4, 5→5, 6→6 | **Pass** |
 | TC-51 | Check-in in the past | Rejected | "cannot be in the past" | **Pass** |
@@ -252,12 +307,27 @@ Suite for days 10–12.
 
 ## 8. Concurrency
 
+### Environment-capability check (not an application test)
+
+| ID | Check | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-71-env | Can PHP's built-in development server serve concurrent requests? | Establish the answer either way | Two 2-second requests took **4.63 s** → requests are **serialised** | **Environment limitation — single-threaded on Windows. Not an application defect; excluded from the application totals** |
+
+TC-71-env has no pass/fail verdict against the application, because it tests
+the web server that the harness happens to be using, not any code in this
+project. Its purpose is to establish whether a race is testable at all — and
+it showed that it was not, against a single instance. It is preserved for
+exactly that reason.
+
+### Application checks
+
 | ID | Test | Expected | Actual | Result |
 |---|---|---|---|---|
-| TC-71-env | PHP built-in server serves concurrent requests | Concurrent | Two 2-second requests took **4.63 s** → **serialised** | **Fail — environment limitation** |
 | TC-71-db | `room_types … FOR UPDATE` blocks a second transaction | Second connection waits | Connection B blocked **3.32 s** while A held the lock | **Pass** |
 | TC-71par | Two server instances run in parallel | Parallel | Two 2-second requests across ports 8080/8081 took **2.36 s** | **Pass** |
 | TC-71 | Race for the last room, 12 parallel attempts | Exactly 1 booking each time | 12/12 iterations: 1 booking, codes `302,200`, 0 duplicate rooms | **Pass** |
+
+**3 application checks in this section, 3 passed, 0 failed.**
 
 ### How the limitation was worked around — and what is still unproven
 
