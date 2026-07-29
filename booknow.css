@@ -89,6 +89,200 @@ footer p {
     font-size: 14px;
 }
 
+/* ---------------------------------------------------------------------------
+   Phase 3 additions for booknow.php: page bar, visible labels, validation
+   errors, estimate panel and flash messages. The existing look of the form
+   panel is unchanged.
+   --------------------------------------------------------------------------- */
+
+/* Keyboard accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 3px solid #1a0c99;
+    outline-offset: 2px;
+}
+
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: #ffffff;
+    color: #1a0c99;
+    padding: 12px 20px;
+    z-index: 100;
+    font-weight: bold;
+}
+
+.skip-link:focus {
+    left: 0;
+}
+
+/* Top bar, matching the dark bar used elsewhere on the site */
+.page-bar {
+    background-color: rgba(0, 0, 0, 0.75);
+    color: #ffffff;
+    padding: 15px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.page-brand {
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.page-nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+}
+
+.page-nav a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.page-nav a:hover,
+.page-nav a:focus {
+    text-decoration: underline;
+}
+
+.logout-form {
+    display: inline;
+}
+
+/* White on #3f22ff is about 7.3:1 contrast - passes WCAG AA and AAA. */
+.logout-btn,
+.secondary-btn {
+    background-color: #3f22ff;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 9px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.logout-btn:hover,
+.secondary-btn:hover {
+    background-color: #2f16d6;
+}
+
+.secondary-btn {
+    width: 100%;
+    padding: 12px 18px;
+}
+
+.book-now-form h1 {
+    font-size: 26px;
+    margin-bottom: 10px;
+}
+
+.book-now-form .intro {
+    margin-bottom: 20px;
+    color: #333333;
+}
+
+/* Visible labels rather than placeholder-only fields */
+.book-now-form label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.book-now-form select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 15px;
+    background-color: #ffffff;
+}
+
+.book-now-form input[aria-invalid="true"],
+.book-now-form select[aria-invalid="true"] {
+    border: 2px solid #b91c1c;
+}
+
+.field-hint {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #444444;
+}
+
+/* Colour is never the only signal: the text itself states the problem. */
+.field-error {
+    margin-top: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #7f1d1d;
+}
+
+.estimate {
+    background-color: rgba(63, 34, 255, 0.08);
+    border-left: 4px solid #3f22ff;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.estimate h2 {
+    font-size: 17px;
+    margin-bottom: 6px;
+}
+
+.estimate-note {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #444444;
+}
+
+.form-note {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #333333;
+}
+
+#availability-result:not(:empty) {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.flash {
+    padding: 12px 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.flash-success {
+    background-color: #e6f4ea;
+    color: #14532d;
+    border-left: 4px solid #14532d;
+}
+
+.flash-error {
+    background-color: #fdeaea;
+    color: #7f1d1d;
+    border-left: 4px solid #7f1d1d;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .book-now-form {
@@ -98,5 +292,27 @@ footer p {
     .back-btn {
         font-size: 16px;
         padding: 8px 16px;
+    }
+
+    .page-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .page-nav ul {
+        gap: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-nav ul {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .book-now-form {
+        width: 95%;
+        padding: 20px 15px;
     }
 }

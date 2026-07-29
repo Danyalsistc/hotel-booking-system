@@ -388,17 +388,35 @@ index supports listing administrators.
 
 ## 7. Not yet implemented
 
-To be explicit about what this schema does **not** do on its own:
+All four tables are now used by application code (Phase 3):
 
-- Only the `users` table is used by application code so far. `register.php`
-  inserts into it and `login.php` reads from it, both with prepared
-  statements (Phase 2).
-- `room_types`, `rooms` and `bookings` are **not read or written by any code
-  yet**. They are defined and seeded, but nothing queries them.
-- The availability overlap check described above is a *plan*, not existing
-  code.
-- The booking form still writes to browser `localStorage`. Nothing reaches
-  the `bookings` table.
-- No data has been imported, and **no test of this schema has been executed**
+- `users` — written by `register.php`, read by `login.php` and counted on the
+  administrator dashboard.
+- `room_types` — read by `booknow.php` and `check_availability.php` for the
+  authoritative capacity and price, and locked `FOR UPDATE` during booking.
+- `rooms` — searched for a free physical room during booking; active rooms are
+  counted on the administrator dashboard.
+- `bookings` — written by `booknow.php`, read by both dashboards, and updated
+  by `admin-booking-action.php`.
+
+The availability overlap rule documented above is now implemented in
+`booking_count_available_rooms()` in `booking-lib.php` (read-only) and again
+inside the booking transaction in `booknow.php` (authoritative).
+
+**Implementation note — concurrency.** MySQL has no exclusion constraint for
+date ranges, so no constraint in this schema can prevent a double booking on
+its own. `booknow.php` takes an exclusive row lock on the relevant
+`room_types` row (`SELECT … FOR UPDATE`) before searching for a free room,
+which serialises concurrent bookings for the same room type. The room search
+is also a locking read, so under the default REPEATABLE READ isolation level
+it sees the latest committed bookings rather than the transaction's snapshot.
+
+Still outstanding:
+
+- Nothing moves a booking to `completed`; that status is defined but never
+  set by any code yet.
+- Room descriptions and prices shown on the six static room pages are still
+  hard-coded in HTML rather than read from `room_types`.
+- **No data has been imported and no test of this schema has been executed**
   — neither PHP nor MySQL was available in the environment where it was
   written.

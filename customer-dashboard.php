@@ -3,25 +3,93 @@ declare(strict_types=1);
 
 /**
  * ===========================================================================
- *  Hotel Booking System - Customer dashboard (shell)
+ *  Hotel Booking System - Customer dashboard
  *  ICT304 Capstone 2
  * ---------------------------------------------------------------------------
- *  Protected page. Any logged-in customer may view it; guests are sent to the
- *  login page and administrators are sent to their own dashboard.
+ *  Shows the signed-in customer's own bookings, read from MySQL.
  *
- *  This is intentionally a SHELL. Booking history is not displayed because
- *  database-backed bookings do not exist yet - they arrive in Phase 3. No
- *  placeholder bookings or invented statistics are shown.
+ *  Ownership comes from the SESSION, never from the URL. The query filters on
+ *  bookings.user_id = auth_user_id(), so there is no booking ID or customer ID
+ *  a visitor could tamper with to see somebody else's reservations.
  * ===========================================================================
  */
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/config.php';
 
 require_login();
 
 // An administrator belongs on the administrator dashboard.
 if (auth_is_admin()) {
     auth_redirect('admin-dashboard.php');
+}
+
+$userId   = (int) auth_user_id();
+$bookings = [];
+$loadError = '';
+
+try {
+    $stmt = $conn->prepare(
+        'SELECT b.booking_reference,
+                rt.name        AS room_type,
+                b.check_in,
+                b.check_out,
+                b.number_of_nights,
+                b.guest_count,
+                b.nightly_rate,
+                b.total_price,
+                b.status,
+                b.created_at
+           FROM bookings b
+           JOIN rooms      r  ON r.id  = b.room_id
+           JOIN room_types rt ON rt.id = r.room_type_id
+          WHERE b.user_id = ?
+       ORDER BY b.created_at DESC, b.id DESC'
+    );
+
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $stmt->bind_result(
+        $reference, $roomType, $checkIn, $checkOut, $nights,
+        $guests, $rate, $total, $status, $createdAt
+    );
+
+    while ($stmt->fetch()) {
+        $bookings[] = [
+            'reference'  => (string) $reference,
+            'room_type'  => (string) $roomType,
+            'check_in'   => (string) $checkIn,
+            'check_out'  => (string) $checkOut,
+            'nights'     => (int) $nights,
+            'guests'     => (int) $guests,
+            'rate'       => (string) $rate,
+            'total'      => (string) $total,
+            'status'     => (string) $status,
+            'created_at' => (string) $createdAt,
+        ];
+    }
+
+    $stmt->close();
+
+} catch (mysqli_sql_exception $exception) {
+    error_log('[Hotel Booking System] Customer booking list failed: ' . $exception->getMessage());
+    $loadError = 'We could not load your bookings right now. Please try again shortly.';
+}
+
+/** Format a Y-m-d date for display, falling back to the raw value. */
+function dash_date(string $value): string
+{
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d', substr($value, 0, 10));
+
+    return $date === false ? $value : $date->format('D j M Y');
+}
+
+/** Format a DATETIME for display. */
+function dash_datetime(string $value): string
+{
+    $date = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $value);
+
+    return $date === false ? $value : $date->format('j M Y, g:ia');
 }
 
 $flash = flash_render();
@@ -45,7 +113,7 @@ $flash = flash_render();
         <nav class="dash-nav" aria-label="Dashboard">
             <ul>
                 <li><a href="index.html">Home</a></li>
-                <li><a href="booknow.html">Book a Room</a></li>
+                <li><a href="booknow.php">Book a Room</a></li>
                 <li>
                     <form action="logout.php" method="post" class="logout-form">
                         <?php echo csrf_field(); ?>
@@ -67,26 +135,80 @@ $flash = flash_render();
     <section class="panel" aria-labelledby="bookings-heading">
         <h2 id="bookings-heading">My Bookings</h2>
 
-        <p class="notice">
-            <strong>Not yet available.</strong>
-            Booking history will be implemented in Phase&nbsp;3, once bookings
-            are stored in the database. Nothing is shown here yet because there
-            is no booking data to display.
-        </p>
+        <?php if ($loadError !== ''): ?>
 
-        <p>
-            The booking form is currently still saving to your browser only, so
-            any booking you make will not appear on this page.
-        </p>
-    </section>
+            <p class="flash flash-error" role="alert"><?php echo e($loadError); ?></p>
 
-    <section class="panel" aria-labelledby="actions-heading">
-        <h2 id="actions-heading">Where to next</h2>
+        <?php elseif ($bookings === []): ?>
 
-        <ul class="link-list">
-            <li><a href="index.html">Browse rooms on the home page</a></li>
-            <li><a href="booknow.html">Go to the booking form</a></li>
-        </ul>
+            <p class="notice">
+                <strong>You have no bookings yet.</strong>
+                When you make a booking it will appear here straight away.
+            </p>
+
+            <p><a href="booknow.php">Book a room now</a></p>
+
+        <?php else: ?>
+
+            <p class="table-intro">
+                Showing <?php echo count($bookings); ?>
+                booking<?php echo count($bookings) === 1 ? '' : 's'; ?>.
+                All prices are in Australian dollars.
+            </p>
+
+            <div class="table-scroll">
+                <table class="data-table">
+                    <caption class="visually-hidden">Your bookings</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Room type</th>
+                            <th scope="col">Check-in</th>
+                            <th scope="col">Check-out</th>
+                            <th scope="col">Nights</th>
+                            <th scope="col">Guests</th>
+                            <th scope="col">Rate/night</th>
+                            <th scope="col">Total</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Booked on</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($bookings as $booking): ?>
+                            <tr>
+                                <td data-label="Reference">
+                                    <code><?php echo e($booking['reference']); ?></code>
+                                </td>
+                                <td data-label="Room type"><?php echo e($booking['room_type']); ?></td>
+                                <td data-label="Check-in"><?php echo e(dash_date($booking['check_in'])); ?></td>
+                                <td data-label="Check-out"><?php echo e(dash_date($booking['check_out'])); ?></td>
+                                <td data-label="Nights"><?php echo e((string) $booking['nights']); ?></td>
+                                <td data-label="Guests"><?php echo e((string) $booking['guests']); ?></td>
+                                <td data-label="Rate/night">
+                                    AUD <?php echo e(number_format((float) $booking['rate'], 2)); ?>
+                                </td>
+                                <td data-label="Total">
+                                    <strong>AUD <?php echo e(number_format((float) $booking['total'], 2)); ?></strong>
+                                </td>
+                                <td data-label="Status">
+                                    <span class="status status-<?php echo e($booking['status']); ?>">
+                                        <?php echo e(ucfirst($booking['status'])); ?>
+                                    </span>
+                                </td>
+                                <td data-label="Booked on"><?php echo e(dash_datetime($booking['created_at'])); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="field-hint">
+                A <strong>pending</strong> booking has been received and is
+                waiting for our staff to confirm it. To change or cancel a
+                booking, please contact the hotel.
+            </p>
+
+        <?php endif; ?>
     </section>
 
 </main>

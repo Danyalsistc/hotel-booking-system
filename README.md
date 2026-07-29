@@ -209,16 +209,16 @@ With Apache and MySQL running and the project in `htdocs`:
 | Page | URL |
 |---|---|
 | Home page | <http://localhost/hotel-booking-system/index.html> |
-| Booking form | <http://localhost/hotel-booking-system/booknow.html> |
+| **Booking form** | <http://localhost/hotel-booking-system/booknow.php> (requires login) |
 | **Login** | <http://localhost/hotel-booking-system/login.php> |
 | **Register** | <http://localhost/hotel-booking-system/register.php> |
 | Customer dashboard | `customer-dashboard.php` (requires login) |
 | Administrator dashboard | `admin-dashboard.php` (requires an admin account) |
 
-`login.php` and `register.php` are the **canonical** authentication pages.
-The old `login.html` and `register.html` still exist so bookmarks do not
-break, but they no longer contain forms — each is a small page that redirects
-to its `.php` equivalent.
+`login.php`, `register.php` and `booknow.php` are the **canonical** pages. The
+old `login.html`, `register.html` and `booknow.html` still exist so bookmarks
+do not break, but they no longer contain forms — each is a small page that
+redirects to its `.php` equivalent.
 
 Adjust the folder name if you used a different one, and add `:8080` if you
 moved Apache off port 80.
@@ -306,6 +306,128 @@ unusable.
 
 ---
 
+## Booking
+
+### Booking flow
+
+1. Browse rooms on the home page and open a room page, or go straight to
+   **Book a Room**.
+2. Press **Book Now** or **Check Availability** on a room page. Both open
+   `booknow.php` with that room type already selected.
+3. **You must be logged in.** A signed-out visitor is sent to `login.php`
+   first. Administrators are redirected to their own dashboard — they manage
+   bookings rather than placing them.
+4. Choose the room type, check-in date, check-out date and number of guests.
+   Your name and email are **not** asked for again: the booking is linked to
+   your account through `bookings.user_id`.
+5. Optionally press **Check availability** for a live count of free rooms.
+6. Press **Request booking**. The server validates everything, allocates a
+   physical room and saves the booking with status **pending**.
+7. You are redirected to your dashboard with the booking reference.
+
+Nothing is stored in browser `localStorage`, and **no payment card details are
+collected anywhere** — payment is out of scope for this project.
+
+### What the server decides
+
+The browser can suggest, but it never decides. On submission the server:
+
+- re-reads the **capacity** and **nightly rate** from `room_types`;
+- recalculates the **number of nights** from the two dates;
+- recalculates the **total price** as rate × nights;
+- generates the **booking reference** using `random_bytes()`;
+- re-checks **availability** inside a locking transaction.
+
+The on-screen estimate and the availability button are conveniences only. If
+JavaScript is disabled the booking process still works correctly.
+
+### Booking rules
+
+| Rule | Value |
+|---|---|
+| Login required | Yes |
+| Check-in | Today or later |
+| Check-out | Strictly after check-in |
+| Maximum stay | 30 nights |
+| Maximum advance booking | 365 days |
+| Guests | 1 up to the room type's `capacity` |
+| Starting status | `pending` |
+
+Dates are judged in the **Australia/Perth** timezone (see `BOOKING_TIMEZONE`
+in `booking-lib.php`), not in whatever timezone the web server happens to use.
+
+### How availability works
+
+Availability is calculated against **physical rooms**, not room categories.
+The hotel owns several rooms of most types, so two guests can both book a
+Deluxe Suite for the same night as long as they occupy different rooms.
+
+A room is unavailable when a `pending` or `confirmed` booking overlaps the
+requested dates:
+
+```
+existing.check_in  <  requested.check_out
+AND existing.check_out >  requested.check_in
+```
+
+The inequalities are strict, so **same-day changeover works**: a guest leaving
+on the 12th does not block a guest arriving on the 12th. Cancelled bookings
+free the room. Rooms marked `maintenance` or `inactive` are excluded — the
+seed data ships room 302 in `maintenance` so this can be demonstrated.
+
+`check_availability.php` is a read-only JSON endpoint used by the booking
+page. **It does not reserve anything.** Its answer can be stale by the time
+you submit, which is why the booking itself re-checks inside a transaction.
+
+### Your booking history
+
+`customer-dashboard.php` lists your bookings — reference, room type, dates,
+nights, guests, nightly rate, total in AUD, status and booking date. The query
+filters on your session's user ID, so **no customer can see another
+customer's bookings**. There is no self-service cancellation yet; contact the
+hotel.
+
+---
+
+## Administrator booking management
+
+`admin-dashboard.php` requires an administrator account and shows:
+
+- **Live totals**, counted from the database on every page load: active
+  physical rooms, registered customers, pending bookings and confirmed
+  bookings. Nothing is hard-coded.
+- **The 50 most recent bookings**: reference, customer name, room type,
+  physical room number, dates, guests, total, status and created date.
+
+Customer email addresses are not shown — the name is enough to identify a
+booking — and password hashes are never selected.
+
+### Status transitions
+
+| From | Action | To |
+|---|---|---|
+| `pending` | Confirm | `confirmed` |
+| `pending` | Cancel | `cancelled` |
+| `confirmed` | Cancel | `cancelled` |
+
+`cancelled` and `completed` are final; no action is offered for them. The
+browser never sends a status value — it sends `confirm` or `cancel`, which
+`admin-booking-action.php` maps to a fixed transition. Every change is POST
+with a CSRF token, and the `UPDATE` carries its own status guard so a repeated
+or invalid transition changes nothing.
+
+### Known limitations
+
+- Customers cannot cancel their own bookings.
+- No booking amendment (changing dates or room after the fact).
+- Nothing moves a booking to `completed` automatically after the stay ends.
+- The administrator list is capped at 50 bookings with no pagination or
+  search.
+- No overbooking or waiting list; if no room is free the booking is refused.
+- No email or payment, by design.
+
+---
+
 ## Current status
 
 This project is mid-rebuild. Honest status of each area:
@@ -319,30 +441,26 @@ This project is mid-rebuild. Honest status of each area:
 | Login (`login.php`) | ✅ Rebuilt — prepared statements, `password_verify`, generic errors, CSRF |
 | Sessions and roles | ✅ Hardened — HttpOnly, SameSite=Lax, strict mode, ID regenerated at login |
 | Logout (`logout.php`) | ✅ POST + CSRF only |
-| Customer dashboard | ⚠️ Exists and is protected, but is a **shell** — no booking history yet |
-| Admin dashboard | ⚠️ Exists and is protected by role, but is a **shell** — no booking management yet |
-| Static room pages | ⚠️ Display correctly, but content is hard-coded, not read from the database |
+| Bookings (`booknow.php`) | ✅ Stored in MySQL, check-in **and** check-out, server-calculated price |
+| Availability | ✅ Calculated against physical rooms and overlapping bookings, inside a locking transaction |
+| Customer dashboard | ✅ Lists the signed-in customer's own bookings from MySQL |
+| Admin dashboard | ✅ Live totals + recent bookings, with confirm/cancel actions |
+| Static room pages | ⚠️ Display correctly and preselect the right room type, but their text and prices are still hard-coded rather than read from the database |
 | Home page layout | ❌ Known structural defect (unclosed element) |
-| **Bookings** | ❌ **Still stored in browser `localStorage`, never reach MySQL; no check-out date** |
-| Availability checking | ❌ Not implemented (placeholder alert only) |
-| Testing | ❌ No tests written or executed yet |
-
-### Booking is not finished
-
-Authentication works, but **booking does not**. `booknow.html` and
-`booknow.js` are unchanged: the form still writes to browser `localStorage`,
-still has no check-out date, and nothing it produces reaches the `bookings`
-table or either dashboard. Database-backed booking, the check-out date and
-availability checking are all **Phase 3** work.
+| Grammar / placeholder content | ❌ "Luxary", placeholder banners, wrong page titles still present |
+| Testing | ⚠️ Test cases written in `TESTING.md`, **none executed** |
 
 ### Nothing here has been run
 
 **No PHP or MySQL runtime testing has been performed on the machine where
-this code was written** — neither PHP nor MySQL was available there. That
-means the database import, the registration and login flows, the session and
-CSRF behaviour and the role redirects have all been written and reviewed by
-inspection, but **not executed**. Treat every flow described above as
-untested until you have run it yourself in XAMPP.
+this code was written** — neither PHP nor MySQL was available there. The
+database import, registration, login, sessions, CSRF, the booking
+transaction, availability, both dashboards and the administrator actions have
+all been written and reviewed by inspection, but **not executed**.
+
+Treat every flow described in this README as **untested** until you have run
+it yourself in XAMPP. `TESTING.md` lists the specific cases to run; every one
+of them is currently recorded as *Not yet executed*.
 
 ---
 
@@ -394,18 +512,24 @@ written justification. See [`docs/DATABASE_DESIGN.md`](docs/DATABASE_DESIGN.md).
 ├── database.sql            Schema + development seed data
 ├── config.php              Database connection (mysqli)
 ├── auth.php                Session, role, CSRF, escaping and flash helpers
+├── booking-lib.php         Shared date rules, overlap rule, reference generator
 ├── login.php               Login page (canonical)
 ├── register.php            Registration page (canonical)
 ├── logout.php              Logout (POST + CSRF only)
-├── customer-dashboard.php  Protected customer dashboard (shell)
-├── admin-dashboard.php     Protected administrator dashboard (shell)
+├── booknow.php             Booking page (canonical) — the booking transaction
+├── check_availability.php  Read-only JSON availability endpoint
+├── customer-dashboard.php  Protected customer dashboard + booking history
+├── admin-dashboard.php     Protected administrator dashboard + live totals
+├── admin-booking-action.php Confirm/cancel handler (POST + CSRF + admin)
 ├── login.html              Legacy redirect to login.php
 ├── register.html           Legacy redirect to register.php
+├── booknow.html            Legacy redirect to booknow.php
 ├── admin-dashboard.html    Legacy notice — no administrator content
-├── booknow.html            ⚠️ Still localStorage-based; Phase 3 rewrites this
 ├── *.html                  Room pages and home page
-├── *.css                   Stylesheets (css.css, dashboard.css, …)
-├── *.js                    Client-side scripts
+├── *.css                   Stylesheets (css.css, dashboard.css, booknow.css, …)
+├── booknow.js              Booking form enhancement only (no localStorage)
+├── room.js                 Room page → booking page navigation
+├── TESTING.md              Test cases (none executed yet)
 ├── docs/
 │   └── DATABASE_DESIGN.md  Schema documentation and ER diagram
 ├── images/                 Room photography and site imagery
