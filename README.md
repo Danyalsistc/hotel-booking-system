@@ -453,7 +453,7 @@ This project is mid-rebuild. Honest status of each area:
 | Login (`login.php`) | ✅ Rebuilt — prepared statements, `password_verify`, generic errors, CSRF |
 | Sessions and roles | ✅ Hardened — HttpOnly, SameSite=Lax, strict mode, ID regenerated at login |
 | Logout (`logout.php`) | ✅ POST + CSRF only |
-| Runtime testing | ✅ Executed — 123 automated checks, all passing (see `TESTING.md`) |
+| Runtime testing | ✅ Executed — 130 distinct application checks, all passed, zero application failures (see `TESTING.md`) |
 | Bookings (`booknow.php`) | ✅ Stored in MySQL, check-in **and** check-out, server-calculated price |
 | Availability | ✅ Calculated against physical rooms and overlapping bookings, inside a locking transaction |
 | Customer dashboard | ✅ Lists the signed-in customer's own bookings from MySQL |
@@ -463,7 +463,6 @@ This project is mid-rebuild. Honest status of each area:
 | Grammar / placeholder content | ✅ "Luxary", placeholder banners, wrong titles and fake contact details all corrected |
 | Static room pages | ⚠️ Correct and consistent, but their text and prices are still hard-coded rather than read from the database |
 | Asset provenance | ❌ **Unknown for every supplied image and video** — see `docs/ASSET_REGISTER.md` |
-| Testing | ⚠️ Test cases written in `TESTING.md`, **none executed** |
 
 ### Runtime testing
 
@@ -471,11 +470,26 @@ The system **has now been executed and tested end to end** on
 30 July 2026 against PHP 8.2.12 and MariaDB 10.4.32, served by PHP's
 built-in development server at <http://127.0.0.1:8080/>.
 
-**123 automated checks were run: 123 pass, 0 fail.** That covers the database
-import and constraints, registration, login, sessions, CSRF, access control,
-booking creation and validation, the availability overlap rules, a genuine
-concurrent-booking race, the administrator actions, output escaping, and
-responsive layout at three viewports.
+**130 distinct application checks were executed: 130 passed, zero application
+failures.** Most were run by an automated HTTP harness, but not all — the
+database import, row counts and constraint checks were carried out by hand
+with the MySQL client, so these are not 130 *automated* checks. Together they
+cover the database import and constraints, registration, login, sessions,
+CSRF, access control, booking creation and validation, the availability
+overlap rules, a genuine concurrent-booking race, the administrator actions,
+and output escaping.
+
+**One separate environment-capability check** established that PHP's built-in
+development server is **single-threaded on Windows**, so a race against a
+single instance cannot be tested. That is a limitation of the test
+environment, **not an application defect**. It is excluded from the 130
+application checks and is counted neither as a pass nor as a failure. It is
+also what justified running a second server instance to produce a genuine
+concurrent booking race.
+
+Reported separately again, and likewise not folded into the 130: 11 PHP files
+passed syntax lint, and 24 page-and-viewport combinations were measured for
+responsive layout.
 
 Three defects were found during testing; two were fixed and one turned out to
 be a false alarm in the test method rather than the application. Full detail,
