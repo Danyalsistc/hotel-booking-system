@@ -29,26 +29,47 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     }
     ?>
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="en-AU">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Log Out - Hotel Booking System</title>
+        <link rel="stylesheet" href="theme.css">
         <link rel="stylesheet" href="css.css">
     </head>
-    <body>
-    <main class="container">
-        <form action="logout.php" method="post">
-            <p class="logo">HOTEL BOOKING SYSTEM</p>
-            <h1>Log Out</h1>
-            <p class="form-intro">Are you sure you want to log out?</p>
-            <?php echo csrf_field(); ?>
-            <button type="submit">Yes, log me out</button>
-            <p class="form-footer">
-                <a href="index.html">Return to the home page</a>
-            </p>
-        </form>
+    <body class="auth-page">
+
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="auth-header">
+        <a class="brand" href="index.html">
+            <span class="brand-mark" aria-hidden="true">HB</span>
+            <span>Hotel Booking System</span>
+        </a>
+    </header>
+
+    <main id="main-content" class="auth-main">
+        <div class="auth-card">
+            <h1>Log out</h1>
+            <p class="auth-intro">Are you sure you want to log out?</p>
+
+            <form action="logout.php" method="post">
+                <?php echo csrf_field(); ?>
+                <div class="auth-actions">
+                    <button type="submit" class="btn btn-primary btn-block">Yes, log me out</button>
+                </div>
+            </form>
+
+            <div class="auth-links">
+                <p><a href="index.html">Return to the home page</a></p>
+            </div>
+        </div>
     </main>
+
+    <footer class="auth-footer">
+        <p>&copy; 2026 Hotel Booking System &mdash; student coursework for ICT304.</p>
+    </footer>
+
     </body>
     </html>
     <?php

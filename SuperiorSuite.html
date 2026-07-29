@@ -1,59 +1,192 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Room</title>
+    <meta name="description" content="Superior Suite - king bed, 40 sqm, AUD 200 per night.">
+    <title>Superior Suite - Hotel Booking System</title>
+    <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="room.css">
 </head>
 <body>
 
-    <!-- Banner Section -->
-    <section class="room-banner">
-        <div class="banner-content">
-            <p>.    .   .   .   .   </p>
-            <!--a href="index.html" class="back-btn">Back to Rooms</a-->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="site-header">
+    <div class="container site-header-inner">
+        <a class="brand" href="index.html">
+            <span class="brand-mark" aria-hidden="true">HB</span>
+            <span>Hotel Booking System</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Main">
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#rooms">Rooms</a></li>
+                <li><a href="booknow.php">Book Now</a></li>
+                <li><a href="login.php">Login</a></li>
+                <li><a href="register.php">Register</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main id="main-content">
+
+    <section class="room-banner" aria-labelledby="room-heading">
+        <div class="container">
+            <a class="back-link" href="index.html#rooms">
+                <span aria-hidden="true">&larr;</span> Back to rooms
+            </a>
+            <h1 id="room-heading">Superior Suite</h1>
+            <p class="room-banner-lead">
+                Our entry-level suite: a king bed and a generous open-plan
+                layout for up to three guests.
+            </p>
         </div>
     </section>
 
-      <!-- Room Details Section -->
-      <section class="room-details">
-        <div class="room-gallery">
-            <img src="images/SuperiorSuite/1.avif" alt="Single Room Main View" class="main-image">
-            <div class="thumbnails">
-                <img src="images/SuperiorSuite/3.jpg" alt="Thumbnail 1">
-                <img src="images/SuperiorSuite/7.jpg" alt="Thumbnail 2">
-                <img src="images/SuperiorSuite/8.webp" alt="Thumbnail 3">
+    <div class="container room-layout">
+
+        <section aria-labelledby="gallery-heading"
+                 data-gallery
+                 data-room-type="Superior Suite">
+
+            <h2 id="gallery-heading" class="visually-hidden">Photographs</h2>
+
+            <img class="gallery-main"
+                 data-gallery-main
+                 src="images/SuperiorSuite/1.avif"
+                 alt="Superior Suite - king bed in an open-plan room."
+                 width="1200" height="900">
+
+            <ul class="gallery-thumbs">
+                <li>
+                    <button type="button" class="gallery-thumb" data-gallery-thumb
+                            aria-pressed="true"
+                            data-full="images/SuperiorSuite/1.avif"
+                            data-view-label="king bed in an open-plan room">
+                        <img src="images/SuperiorSuite/1.avif" alt="" loading="lazy" width="400" height="300">
+                        <span class="visually-hidden">Show view 1 of the Superior Suite</span>
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="gallery-thumb" data-gallery-thumb
+                            aria-pressed="false"
+                            data-full="images/SuperiorSuite/3.jpg"
+                            data-view-label="seating area">
+                        <img src="images/SuperiorSuite/3.jpg" alt="" loading="lazy" width="400" height="300">
+                        <span class="visually-hidden">Show view 2 of the Superior Suite</span>
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="gallery-thumb" data-gallery-thumb
+                            aria-pressed="false"
+                            data-full="images/SuperiorSuite/7.jpg"
+                            data-view-label="view towards the window">
+                        <img src="images/SuperiorSuite/7.jpg" alt="" loading="lazy" width="400" height="300">
+                        <span class="visually-hidden">Show view 3 of the Superior Suite</span>
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="gallery-thumb" data-gallery-thumb
+                            aria-pressed="false"
+                            data-full="images/SuperiorSuite/8.webp"
+                            data-view-label="bathroom">
+                        <img src="images/SuperiorSuite/8.webp" alt="" loading="lazy" width="400" height="300">
+                        <span class="visually-hidden">Show view 4 of the Superior Suite</span>
+                    </button>
+                </li>
+            </ul>
+
+            <p class="gallery-hint">Select a thumbnail to enlarge that view.</p>
+
+            <div class="room-description">
+                <h2>About this room</h2>
+                <p>
+                    The Superior Suite is 40 square metres arranged around a
+                    king bed, with a seating area set apart from the sleeping
+                    space.
+                </p>
+                <p>
+                    It sleeps up to three guests, making it a practical choice
+                    for a small family or a couple wanting extra room.
+                </p>
+            </div>
+        </section>
+
+        <aside class="room-summary" aria-labelledby="summary-heading">
+            <h2 id="summary-heading" class="visually-hidden">Room details and booking</h2>
+
+            <p class="room-price">
+                <span class="room-price-amount">AUD 200</span>
+                <span class="room-price-unit">per night</span>
+            </p>
+
+            <ul class="room-facts">
+                <li><span class="fact-label">Bed type</span> <span class="fact-value">King bed</span></li>
+                <li><span class="fact-label">Room size</span> <span class="fact-value">40 sqm</span></li>
+                <li><span class="fact-label">Sleeps</span> <span class="fact-value">Up to 3 guests</span></li>
+            </ul>
+
+            <h3 class="facilities-heading">Room facilities</h3>
+            <ul class="facilities">
+                <li>Air conditioning</li>
+                <li>Free Wi-Fi</li>
+                <li>TV</li>
+                <li>Mini fridge</li>
+                <li>Coffee maker</li>
+                <li>Bathtub</li>
+            </ul>
+
+            <div class="room-actions">
+                <a class="btn btn-primary" href="booknow.php?room_type=Superior%20Suite">
+                    Book this room
+                </a>
+                <a class="btn btn-secondary" href="booknow.php?room_type=Superior%20Suite">
+                    Check availability
+                </a>
+            </div>
+
+            <p class="room-actions-note">
+                You will need to sign in. Submitting the booking form creates a
+                pending request; no payment is taken.
+            </p>
+        </aside>
+
+    </div>
+
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div>
+                <p class="footer-heading">Hotel Booking System</p>
+                <p class="footer-list">ICT304 Capstone 2 student project.</p>
+            </div>
+            <div>
+                <p class="footer-heading">Explore</p>
+                <ul class="footer-list">
+                    <li><a href="index.html#rooms">All rooms</a></li>
+                    <li><a href="booknow.php">Book a room</a></li>
+                    <li><a href="login.php">Login</a></li>
+                </ul>
+            </div>
+            <div>
+                <p class="footer-heading">Contact</p>
+                <p class="demo-notice">
+                    Demonstration project &mdash; no contact details are
+                    published, and enquiries cannot be answered through this site.
+                </p>
             </div>
         </div>
-
-      <div class="room-info">
-        <h2>Superior Suite</h2>
-        <ul>
-            <li><strong>Bed Type:</strong> King Bed</li>
-            <li><strong>Room Size:</strong> 40 sqm</li>
-            <li><strong>Room Facilities:</strong> 
-                <ul>
-                    <li>Air conditioning,</li>
-                    <li>Free Wi-Fi, </li>
-                    <li>TV, </li>
-                    <li>Mini Fridge, </li>
-                    <li>Coffee Maker, </li>
-                    <li>Bathtub</li>
-                </ul>
-            </li>
-            <li><strong>Price Per Night:</strong> $200</li>
-        </ul>
-        <button onclick="checkAvailability('Superior Suite')" class="btn">Check Availability</button>
-        <button onclick="goToBooking('Superior Suite')" class="btn">Book Now</button>
+        <p class="footer-bottom">
+            &copy; 2026 Hotel Booking System &mdash; student coursework. All prices in AUD.
+        </p>
     </div>
-    </section>
+</footer>
 
-    <footer>
-        <p>&copy; 2025 Hotel Booking System. All Rights Reserved.</p>
-    </footer>
-
-    <script src="room.js"></script>
-    
+<script src="room.js"></script>
 </body>
 </html>

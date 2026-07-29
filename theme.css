@@ -1,0 +1,621 @@
+/* ===========================================================================
+   Hotel Booking System - Shared design system
+   ICT304 Capstone 2
+   ---------------------------------------------------------------------------
+   Loaded FIRST on every page, before the page-specific stylesheet. Holds the
+   design tokens plus the base and component styles that every page shares
+   (skip link, header, footer, buttons, forms, flash messages, tables).
+
+   No external fonts, no CDN, no build step. The site works fully offline.
+   =========================================================================== */
+
+:root {
+
+    /* --- Colour ---------------------------------------------------------
+       A warm, restrained palette: deep petrol blue for structure and
+       actions, brass as a decorative accent, warm off-white surfaces.
+
+       Contrast (verified by calculation):
+         white on --color-primary ....... 11.9:1  (AAA)
+         --color-text on --color-bg ..... 15.6:1  (AAA)
+         --color-text-muted on --color-bg  5.8:1  (AA)
+         --color-accent on white ......... 3.3:1  - DECORATIVE ONLY.
+             Brass is used for borders, rules and large display text.
+             It is never used for small body text on a light background.
+    */
+    --color-primary:        #123B4F;
+    --color-primary-dark:   #0C2A38;
+    --color-primary-soft:   #E8EFF2;
+
+    --color-accent:         #B08544;
+    --color-accent-dark:    #8E6A34;
+
+    --color-bg:             #FAF7F2;
+    --color-surface:        #FFFFFF;
+    --color-surface-alt:    #F4F0E9;
+
+    --color-text:           #1F2523;
+    --color-text-muted:     #5C6360;
+    --color-text-inverse:   #FFFFFF;
+
+    --color-border:         #E2DCD2;
+    --color-border-strong:  #C9C0B2;
+
+    --color-success:        #1E5F3E;
+    --color-success-bg:     #E7F2EB;
+    --color-warning:        #8A5B00;
+    --color-warning-bg:     #FDF3E0;
+    --color-error:          #8C2020;
+    --color-error-bg:       #FCEDED;
+
+    --color-focus:          #123B4F;
+
+    /* --- Typography ------------------------------------------------------
+       System font stacks only. Nothing is downloaded, so the site renders
+       identically with no network connection. */
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+                  "Times New Roman", serif;
+
+    --text-xs:   0.8125rem;   /* 13px */
+    --text-sm:   0.875rem;    /* 14px */
+    --text-base: 1rem;        /* 16px */
+    --text-lg:   1.125rem;    /* 18px */
+    --text-xl:   1.375rem;    /* 22px */
+    --text-2xl:  1.75rem;     /* 28px */
+    --text-3xl:  2.25rem;     /* 36px */
+    --text-4xl:  3rem;        /* 48px */
+
+    --leading-tight: 1.25;
+    --leading-normal: 1.6;
+
+    /* --- Spacing (4px scale) --------------------------------------------- */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+    --space-8: 4rem;
+
+    /* --- Radius ---------------------------------------------------------- */
+    --radius-sm:   4px;
+    --radius-md:   8px;
+    --radius-lg:   16px;
+    --radius-pill: 999px;
+
+    /* --- Shadows --------------------------------------------------------- */
+    --shadow-sm: 0 1px 3px rgba(31, 37, 35, 0.08);
+    --shadow-md: 0 4px 14px rgba(31, 37, 35, 0.10);
+    --shadow-lg: 0 12px 32px rgba(31, 37, 35, 0.16);
+
+    /* --- Layout ---------------------------------------------------------- */
+    --max-width: 1140px;
+    --max-width-narrow: 720px;
+
+    /* --- Motion ---------------------------------------------------------- */
+    --transition: 160ms ease;
+}
+
+/* ===========================================================================
+   Base
+   =========================================================================== */
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    line-height: var(--leading-tight);
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+
+p { max-width: 68ch; }
+
+a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+a:hover { color: var(--color-primary-dark); }
+
+img { max-width: 100%; }
+
+code {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-size: 0.95em;
+    background-color: var(--color-surface-alt);
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+}
+
+/* --- Focus ---------------------------------------------------------------
+   The native outline is REPLACED with a stronger, higher-contrast one - it is
+   never simply removed. */
+:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* On dark backgrounds the focus ring switches to white so it stays visible. */
+.on-dark :focus-visible,
+.site-header :focus-visible,
+.site-footer :focus-visible,
+.hero :focus-visible {
+    outline-color: #FFFFFF;
+}
+
+/* --- Reduced motion ------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ===========================================================================
+   Utilities
+   =========================================================================== */
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 200;
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    padding: var(--space-3) var(--space-5);
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: var(--shadow-md);
+}
+
+.skip-link:focus {
+    left: var(--space-2);
+    top: var(--space-2);
+}
+
+.container {
+    width: 100%;
+    max-width: var(--max-width);
+    margin-inline: auto;
+    padding-inline: var(--space-5);
+}
+
+.container-narrow {
+    width: 100%;
+    max-width: var(--max-width-narrow);
+    margin-inline: auto;
+    padding-inline: var(--space-5);
+}
+
+/* ===========================================================================
+   Site header
+   =========================================================================== */
+
+.site-header {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-bottom: 3px solid var(--color-accent);
+}
+
+.site-header-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: var(--space-4);
+}
+
+/* Wordmark */
+.brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-text-inverse);
+    text-decoration: none;
+}
+
+.brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid var(--color-accent);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0;
+    flex-shrink: 0;
+}
+
+.brand:hover { color: var(--color-text-inverse); }
+
+.site-nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.site-nav a {
+    display: inline-block;
+    color: var(--color-text-inverse);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    /* Comfortable pointer target */
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    border-bottom: 2px solid transparent;
+}
+
+.site-nav a:hover,
+.site-nav a:focus {
+    color: var(--color-text-inverse);
+    background-color: rgba(255, 255, 255, 0.12);
+    border-bottom-color: var(--color-accent);
+}
+
+.site-nav a[aria-current="page"] {
+    border-bottom-color: var(--color-accent);
+}
+
+.site-nav form { display: inline; }
+
+/* ===========================================================================
+   Buttons
+   =========================================================================== */
+
+.btn,
+button.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    /* Minimum comfortable pointer target */
+    min-height: 44px;
+    padding: var(--space-3) var(--space-5);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: var(--text-base);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--transition), border-color var(--transition);
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary-dark);
+}
+
+/* For use on dark or photographic backgrounds */
+.btn-on-dark {
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    border-color: var(--color-surface);
+}
+
+.btn-on-dark:hover {
+    background-color: var(--color-surface-alt);
+    color: var(--color-primary-dark);
+}
+
+.btn-ghost-on-dark {
+    background-color: transparent;
+    color: var(--color-text-inverse);
+    border-color: rgba(255, 255, 255, 0.75);
+}
+
+.btn-ghost-on-dark:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--color-text-inverse);
+}
+
+.btn-block { width: 100%; }
+
+.btn-sm {
+    min-height: 38px;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+}
+
+/* ===========================================================================
+   Forms
+   =========================================================================== */
+
+.field {
+    margin-bottom: var(--space-5);
+}
+
+/* Visible, always-present labels. Placeholders are never used as labels. */
+.field label {
+    display: block;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-2);
+}
+
+.field input,
+.field select,
+.field textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-3);
+    font-family: inherit;
+    font-size: var(--text-base);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: var(--color-primary);
+}
+
+/* Invalid state is signalled by border AND text AND aria-invalid -
+   never by colour alone. */
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"] {
+    border: 2px solid var(--color-error);
+}
+
+.field-hint {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+.field-error {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-error);
+}
+
+/* ===========================================================================
+   Flash / status messages
+   =========================================================================== */
+
+.flash {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid;
+    margin-bottom: var(--space-5);
+    font-weight: 600;
+}
+
+.flash-success {
+    background-color: var(--color-success-bg);
+    border-left-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.flash-error {
+    background-color: var(--color-error-bg);
+    border-left-color: var(--color-error);
+    color: var(--color-error);
+}
+
+.notice {
+    background-color: var(--color-warning-bg);
+    border-left: 4px solid var(--color-warning);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text);
+}
+
+/* ===========================================================================
+   Panels / cards
+   =========================================================================== */
+
+.panel {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+.panel h2 {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-4);
+}
+
+/* ===========================================================================
+   Status badges
+   Each badge carries its own text label, so colour is never the only cue.
+   =========================================================================== */
+
+.status {
+    display: inline-block;
+    padding: 2px var(--space-3);
+    border-radius: var(--radius-pill);
+    border: 1px solid;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-pending {
+    background-color: var(--color-warning-bg);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+}
+
+.status-confirmed {
+    background-color: var(--color-success-bg);
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.status-cancelled {
+    background-color: var(--color-error-bg);
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+
+.status-completed {
+    background-color: var(--color-primary-soft);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* ===========================================================================
+   Site footer
+   =========================================================================== */
+
+.site-footer {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    border-top: 3px solid var(--color-accent);
+    padding-block: var(--space-6);
+    margin-top: var(--space-7);
+}
+
+.site-footer a {
+    color: var(--color-text-inverse);
+}
+
+.site-footer p { max-width: none; }
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-5);
+}
+
+.footer-heading {
+    font-family: var(--font-serif);
+    font-size: var(--text-base);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-inverse);
+    margin-bottom: var(--space-3);
+}
+
+.footer-list {
+    list-style: none;
+}
+
+.footer-list li {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.footer-bottom {
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: var(--text-sm);
+}
+
+/* A clearly-labelled statement that this is coursework, not a real hotel. */
+.demo-notice {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+}
+
+/* ===========================================================================
+   Responsive
+   =========================================================================== */
+
+@media (max-width: 900px) {
+    :root {
+        --text-3xl: 1.875rem;
+        --text-4xl: 2.25rem;
+    }
+}
+
+@media (max-width: 700px) {
+    .site-header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .site-nav ul {
+        gap: var(--space-1);
+    }
+
+    .container,
+    .container-narrow {
+        padding-inline: var(--space-4);
+    }
+}

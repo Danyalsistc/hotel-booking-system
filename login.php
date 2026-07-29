@@ -118,22 +118,31 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 $flash = flash_render();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log In - Hotel Booking System</title>
+    <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="css.css">
 </head>
-<body>
+<body class="auth-page">
 
-<main class="container">
+<a class="skip-link" href="#main-content">Skip to main content</a>
 
-    <form action="login.php" method="post" novalidate>
+<header class="auth-header">
+    <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">HB</span>
+        <span>Hotel Booking System</span>
+    </a>
+</header>
 
-        <p class="logo">HOTEL BOOKING SYSTEM</p>
+<main id="main-content" class="auth-main">
 
-        <h1>Welcome Back</h1>
+    <div class="auth-card">
+
+        <h1>Welcome back</h1>
+        <p class="auth-intro">Sign in to manage your bookings.</p>
 
         <?php echo $flash; ?>
 
@@ -144,6 +153,8 @@ $flash = flash_render();
         <?php if ($error !== ''): ?>
             <p class="flash flash-error" role="alert"><?php echo e($error); ?></p>
         <?php endif; ?>
+
+        <form action="login.php" method="post" novalidate>
 
         <?php echo csrf_field(); ?>
 
@@ -172,20 +183,29 @@ $flash = flash_render();
             >
         </div>
 
-        <button type="submit">Log in</button>
+        <div class="auth-actions">
+            <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        </div>
 
-        <p class="form-footer">
-            Don't have an account?
-            <a href="register.php">Register</a>
-        </p>
+        </form>
 
-        <p class="form-footer">
-            <a href="index.html">Return to the home page</a>
-        </p>
+        <div class="auth-links">
+            <p>
+                Don't have an account?
+                <a href="register.php">Create one</a>
+            </p>
+            <p>
+                <a href="index.html">Return to the home page</a>
+            </p>
+        </div>
 
-    </form>
+    </div>
 
 </main>
+
+<footer class="auth-footer">
+    <p>&copy; 2026 Hotel Booking System &mdash; student coursework for ICT304.</p>
+</footer>
 
 </body>
 </html>

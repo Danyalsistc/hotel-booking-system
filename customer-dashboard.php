@@ -95,29 +95,34 @@ function dash_datetime(string $value): string
 $flash = flash_render();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dashboard - Hotel Booking System</title>
+    <title>My Bookings - Hotel Booking System</title>
+    <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="dashboard.css">
 </head>
-<body>
+<body class="dash-page">
 
 <a class="skip-link" href="#main-content">Skip to main content</a>
 
-<header class="dash-header">
-    <div class="dash-header-inner">
-        <p class="dash-brand">Hotel Booking System</p>
+<header class="site-header">
+    <div class="container site-header-inner">
+        <a class="brand" href="index.html">
+            <span class="brand-mark" aria-hidden="true">HB</span>
+            <span>Hotel Booking System</span>
+        </a>
 
-        <nav class="dash-nav" aria-label="Dashboard">
+        <nav class="site-nav" aria-label="Main">
             <ul>
                 <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#rooms">Rooms</a></li>
                 <li><a href="booknow.php">Book a Room</a></li>
                 <li>
-                    <form action="logout.php" method="post" class="logout-form">
+                    <form action="logout.php" method="post">
                         <?php echo csrf_field(); ?>
-                        <button type="submit" class="logout-btn">Log out</button>
+                        <button type="submit" class="btn btn-sm btn-ghost-on-dark">Log out</button>
                     </form>
                 </li>
             </ul>
@@ -126,11 +131,14 @@ $flash = flash_render();
 </header>
 
 <main id="main-content" class="dash-main">
+  <div class="container">
 
     <?php echo $flash; ?>
 
-    <h1>Welcome, <?php echo e(auth_user_name()); ?></h1>
-    <p class="dash-subtitle">You are signed in as a customer.</p>
+    <div class="dash-heading">
+        <h1>Welcome, <?php echo e(auth_user_name()); ?></h1>
+        <p class="dash-subtitle">You are signed in as a customer.</p>
+    </div>
 
     <section class="panel" aria-labelledby="bookings-heading">
         <h2 id="bookings-heading">My Bookings</h2>
@@ -211,10 +219,15 @@ $flash = flash_render();
         <?php endif; ?>
     </section>
 
+  </div>
 </main>
 
-<footer class="dash-footer">
-    <p>&copy; 2025 Hotel Booking System. All Rights Reserved.</p>
+<footer class="site-footer">
+    <div class="container">
+        <p class="footer-bottom">
+            &copy; 2026 Hotel Booking System &mdash; student coursework. All prices in AUD.
+        </p>
+    </div>
 </footer>
 
 </body>

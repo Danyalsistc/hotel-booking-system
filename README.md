@@ -445,9 +445,11 @@ This project is mid-rebuild. Honest status of each area:
 | Availability | ✅ Calculated against physical rooms and overlapping bookings, inside a locking transaction |
 | Customer dashboard | ✅ Lists the signed-in customer's own bookings from MySQL |
 | Admin dashboard | ✅ Live totals + recent bookings, with confirm/cancel actions |
-| Static room pages | ⚠️ Display correctly and preselect the right room type, but their text and prices are still hard-coded rather than read from the database |
-| Home page layout | ❌ Known structural defect (unclosed element) |
-| Grammar / placeholder content | ❌ "Luxary", placeholder banners, wrong page titles still present |
+| Interface | ✅ Rebuilt on a shared design system (`theme.css`), responsive and accessible |
+| Home page layout | ✅ Structural defect fixed; hero, room grid and sections rebuilt |
+| Grammar / placeholder content | ✅ "Luxary", placeholder banners, wrong titles and fake contact details all corrected |
+| Static room pages | ⚠️ Correct and consistent, but their text and prices are still hard-coded rather than read from the database |
+| Asset provenance | ❌ **Unknown for every supplied image and video** — see `docs/ASSET_REGISTER.md` |
 | Testing | ⚠️ Test cases written in `TESTING.md`, **none executed** |
 
 ### Nothing here has been run
@@ -526,10 +528,20 @@ written justification. See [`docs/DATABASE_DESIGN.md`](docs/DATABASE_DESIGN.md).
 ├── booknow.html            Legacy redirect to booknow.php
 ├── admin-dashboard.html    Legacy notice — no administrator content
 ├── *.html                  Room pages and home page
-├── *.css                   Stylesheets (css.css, dashboard.css, booknow.css, …)
+├── theme.css               Design system — tokens, base, shared components
+├── index.css               Home page
+├── room.css                Room detail pages
+├── css.css                 Authentication and simple centred pages
+├── booknow.css             Booking page
+├── dashboard.css           Both dashboards
+├── main.js                 Home page hero video control
 ├── booknow.js              Booking form enhancement only (no localStorage)
-├── room.js                 Room page → booking page navigation
+├── room.js                 Room page gallery
 ├── TESTING.md              Test cases (none executed yet)
+└── docs/
+    ├── DATABASE_DESIGN.md  Schema, ER diagram, assumptions
+    ├── FRONT_END_DESIGN.md Visual design evidence
+    └── ASSET_REGISTER.md   Image/video provenance — ACTION REQUIRED
 ├── docs/
 │   └── DATABASE_DESIGN.md  Schema documentation and ER diagram
 ├── images/                 Room photography and site imagery

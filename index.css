@@ -1,268 +1,341 @@
-/* Global styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* ===========================================================================
+   Hotel Booking System - Homepage
+   ICT304 Capstone 2
+   ---------------------------------------------------------------------------
+   Loaded AFTER theme.css, which supplies the tokens, base styles, header,
+   footer, buttons and utilities used here.
 
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
-    padding-bottom: 60px; /* To ensure footer doesn't overlap content */
-}
+   Note: the previous version of this file contained a global
+   `img { width:100%; height:70% }` rule that resized every image on every
+   page. It has been removed; image sizing is now scoped to the components
+   that need it.
+   =========================================================================== */
 
-/* Navigation Bar */
-nav {
-    display: flex;
-    justify-content: right;
-    align-items: right;
-    background-color: #333;
-    padding: 10px 20px;
-}
+/* ===========================================================================
+   Hero
+   =========================================================================== */
 
-nav ul {
-    list-style-type: none;
-    display: inline-flex;
-}
-
-nav ul li {
-    margin-right: 20px;
-    position: relative; /* For positioning the dropdown */
-}
-
-nav ul li a {
-    color: #fff;
-    text-decoration: none;
-    font-weight: bold;
-    padding: 5px 10px;
-}
-
-nav ul li a:hover {
-    color: #3f22ff;
-    background-color: #444;
-}
-
-
-/* Video Banner */
-.video-banner {
+.hero {
     position: relative;
-    width: 100%;
-    height: 600px; /* Set the desired height */
-}
-
-.banner-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Ensures the video covers the container */
-}
-
-.video-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    isolation: isolate;
     display: flex;
-    justify-content: center;
     align-items: center;
-    color: white;
-    text-align: center;
+    min-height: 30rem;
+    /* Never taller than most of the viewport, so the rooms below stay
+       discoverable on short screens. */
+    max-height: 80vh;
+    padding-block: var(--space-8);
+    background-color: var(--color-primary-dark);
+    background-image: url('images/home_banner.jpg');
+    background-size: cover;
+    background-position: center;
+    color: var(--color-text-inverse);
+    overflow: hidden;
 }
 
-.tap-button {
+.hero-video {
     position: absolute;
-    bottom: 20px; /* 20px from the bottom */
-    right: 20px; /* 20px from the right */
-    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
-    color: white;
-    padding: 10px 20px;
-    font-size: 18px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    text-align: center;
-}
-
-.tap-button:hover {
-    background-color: rgba(0, 0, 0, 0.9); /* Darker on hover */
-}
-
-/* Slideshow container to align images */
-.jumbotron {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    max-width: 100%; /* Ensure it doesn't overflow */
-    overflow: hidden; /* Hide any overflowing images */
-    position: relative; /* Keep images inside */
-}
-
-
-img {
-    width: 100%;
-    height: 70%;
-    object-fit: cover; /* Ensure the images are properly scaled without distorting */
-}
-
-/* Content Styling */
-.well {
-    background-color: #fff;
-    padding: 20px;
-    margin: 20px 0;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.well h4 {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-}
-
-.well p {
-    font-size: 1rem;
-    line-height: 1.6;
-}
-
-.row {
-    display: flex;
-    justify-content: space-between;
-    gap: 30px;
-    flex-wrap: wrap;
-}
-
-/* Rooms Section */
-.rooms {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin: 40px 20px;
-}
-
-.room {
-    position: relative;
-    text-align: center; /* Centering room content */
-}
-
-.room h2 {
-    font-size: 2rem;
-    margin-bottom: 20px;
-    text-align: center; /* Ensures header is centered */
-}
-
-.room-info {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: rgb(12, 12, 12);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
-    text-align: center;
-}
-
-.room:hover .room-info {
-    opacity: 1;
-    visibility: visible;
-}
-
-.room-image {
+    inset: 0;
+    z-index: -2;
     width: 100%;
     height: 100%;
-    border-radius: 5px;
     object-fit: cover;
 }
 
-.go-link {
-    text-decoration: none;
-    color: white;
-    background-color: #3f22ff;
-    padding: 5px 10px;
-    border-radius: 4px;
-    margin-top: 10px;
-    display: inline-block;
+/* Gradient scrim: keeps the headline legible whatever frame is showing. */
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+        100deg,
+        rgba(12, 42, 56, 0.88) 0%,
+        rgba(12, 42, 56, 0.72) 45%,
+        rgba(12, 42, 56, 0.45) 100%
+    );
 }
 
-/* About Us Section */
-.about-us {
-    padding: 40px 20px;
-    background-color: #fff;
-    text-align: center;
-}
-
-.about-us h2 {
-    font-size: 2rem;
-    margin-bottom: 20px;
-}
-
-.about-us p {
-    font-size: 1rem;
-    line-height: 1.6;
-}
-
-
-
-/* Footer */
-/* Footer Styling */
-footer {
-    background-color: #333;
-    color: #ffffff;
-    padding: 40px 80px;
-    text-align: center;
-    font-family: 'Arial', sans-serif;
+.hero-content {
     position: relative;
-    bottom: 0;
-    width: 100%;
 }
 
-.footer-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-}
-
-.footer-content p {
-    font-size: 16px;
-    margin: 5px 0;
-}
-
-.contact-footer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.contact-footer p {
-    margin: 10px 0;
-    font-size: 14px;
-}
-
-.contact-footer a {
-    color: #3498db;
-    text-decoration: none;
+.hero-eyebrow {
+    font-size: var(--text-sm);
     font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #E7D3AE;              /* light brass - 8.9:1 on the scrim */
+    margin-bottom: var(--space-3);
 }
 
-.contact-footer a:hover {
-    text-decoration: underline;
+.hero h1 {
+    font-size: var(--text-4xl);
+    color: var(--color-text-inverse);
+    max-width: 16ch;
+    margin-bottom: var(--space-4);
 }
 
-/* Responsive Design for Footer */
-@media screen and (max-width: 768px) {
-    footer {
-        padding: 20px 30px;
-    }
+.hero-lead {
+    font-size: var(--text-lg);
+    max-width: 46ch;
+    margin-bottom: var(--space-6);
+    color: rgba(255, 255, 255, 0.94);
+}
 
-    .footer-content p {
-        font-size: 14px;
-    }
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
 
-    .contact-footer p {
-        font-size: 14px;
+.hero-video-controls {
+    position: absolute;
+    right: var(--space-5);
+    bottom: var(--space-5);
+    z-index: 1;
+}
+
+/* ===========================================================================
+   Sections
+   =========================================================================== */
+
+.section {
+    padding-block: var(--space-8);
+}
+
+.section-alt {
+    background-color: var(--color-surface-alt);
+    border-block: 1px solid var(--color-border);
+}
+
+.section-head {
+    margin-bottom: var(--space-6);
+}
+
+.section-head h2 {
+    margin-bottom: var(--space-3);
+}
+
+/* Brass rule under each section heading */
+.section-head h2::after {
+    content: '';
+    display: block;
+    width: 3rem;
+    height: 3px;
+    margin-top: var(--space-3);
+    background-color: var(--color-accent);
+}
+
+.section-lead {
+    color: var(--color-text-muted);
+    font-size: var(--text-lg);
+}
+
+.section-note {
+    margin-top: var(--space-6);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.container-prose > * + * {
+    margin-top: var(--space-4);
+}
+
+.container-prose {
+    max-width: var(--max-width-narrow);
+    margin-inline: auto;
+}
+
+/* ===========================================================================
+   Room grid
+   3 columns on large screens, 2 on tablets, 1 on phones.
+   Nothing is hidden until hover: names, prices and links are always visible.
+   =========================================================================== */
+
+.room-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-5);
+}
+
+.room-card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.room-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* The card lifts on hover as a nicety only. Because the whole card is not a
+   link, focus styling lives on the button inside it, which is reachable by
+   keyboard in the normal tab order. */
+.room-card:focus-within {
+    box-shadow: var(--shadow-md);
+}
+
+.room-card-image {
+    display: block;
+    width: 100%;
+    height: 14rem;
+    object-fit: cover;
+    background-color: var(--color-surface-alt);
+}
+
+.room-card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: var(--space-5);
+}
+
+.room-card-title {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-2);
+}
+
+.room-card-meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+}
+
+.room-card-price {
+    margin-bottom: var(--space-5);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.price {
+    font-family: var(--font-serif);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+/* Push the button to the bottom so all cards align regardless of text length */
+.room-card-body .btn {
+    margin-top: auto;
+}
+
+/* ===========================================================================
+   How booking works
+   =========================================================================== */
+
+.step-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-5);
+    counter-reset: step;
+}
+
+.step {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-5);
+}
+
+.step-number {
+    display: inline-grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-family: var(--font-serif);
+    font-size: var(--text-lg);
+    font-weight: 700;
+}
+
+.step h3 {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-2);
+}
+
+.step p {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* ===========================================================================
+   Responsive
+   =========================================================================== */
+
+@media (max-width: 1000px) {
+    .step-list {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
+@media (max-width: 900px) {
+    /* Tablet: two room columns */
+    .room-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 
+    .hero {
+        min-height: 26rem;
+    }
+}
+
+@media (max-width: 640px) {
+    /* Phone: single column */
+    .room-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .step-list {
+        grid-template-columns: 1fr;
+    }
+
+    .hero {
+        min-height: 22rem;
+        padding-block: var(--space-7);
+        /* The 80vh cap is released on small screens. Combined with
+           overflow:hidden it could otherwise clip the call-to-action buttons
+           for a visitor using an enlarged font size. */
+        max-height: none;
+    }
+
+    .hero h1 {
+        max-width: none;
+    }
+
+    .hero-actions .btn {
+        flex: 1 1 100%;
+    }
+
+    /* Keep the video control clear of the call-to-action buttons */
+    .hero-video-controls {
+        position: static;
+        margin-top: var(--space-5);
+        padding-inline: var(--space-4);
+    }
+
+    .section {
+        padding-block: var(--space-7);
+    }
+
+    .room-card-image {
+        height: 12rem;
+    }
+}
+
+/* Reduced motion: no lift animation on the cards. */
+@media (prefers-reduced-motion: reduce) {
+    .room-card:hover {
+        transform: none;
+    }
+}

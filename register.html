@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +7,8 @@
     <!--
         LEGACY PAGE - kept only so old links and bookmarks do not break.
 
-        The registration form now lives at register.php, which validates input
-        on the server, checks for duplicate email addresses and stores only a
-        password hash. The old form that used to sit here has been removed so
-        it cannot be submitted.
+        The registration form now lives at register.php. The old form that used
+        to sit here has been removed so it cannot be submitted.
 
         A zero-delay meta refresh is used rather than JavaScript, so the
         redirect still works with scripting disabled. The visible link below
@@ -19,31 +17,41 @@
     <meta http-equiv="refresh" content="0; url=register.php">
 
     <title>Create an Account - Hotel Booking System</title>
+    <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="css.css">
 </head>
-<body>
+<body class="auth-page">
 
-<main class="container">
-    <div class="legacy-notice">
-        <p class="logo">HOTEL BOOKING SYSTEM</p>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 
+<header class="auth-header">
+    <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">HB</span>
+        <span>Hotel Booking System</span>
+    </a>
+</header>
+
+<main id="main-content" class="auth-main">
+    <div class="auth-card legacy-notice">
         <h1>This page has moved</h1>
 
         <p>
             The registration page is now at
             <a href="register.php">register.php</a>.
-            You should be redirected automatically.
+            You should be redirected there automatically.
         </p>
 
-        <p class="form-footer">
-            <a href="register.php">Continue to the registration page</a>
-        </p>
+        <a class="btn btn-primary btn-block" href="register.php">Continue to registration</a>
 
-        <p class="form-footer">
-            <a href="index.html">Return to the home page</a>
-        </p>
+        <div class="auth-links">
+            <p><a href="index.html">Return to the home page</a></p>
+        </div>
     </div>
 </main>
+
+<footer class="auth-footer">
+    <p>&copy; 2026 Hotel Booking System &mdash; student coursework for ICT304.</p>
+</footer>
 
 </body>
 </html>

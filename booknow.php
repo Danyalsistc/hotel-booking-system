@@ -412,40 +412,52 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 $flash = flash_render();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book a Room - Hotel Booking System</title>
+    <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="booknow.css">
 </head>
-<body>
+<body class="booking-page">
 
 <a class="skip-link" href="#main-content">Skip to main content</a>
 
-<header class="page-bar">
-    <p class="page-brand">Hotel Booking System</p>
-    <nav class="page-nav" aria-label="Main">
-        <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="customer-dashboard.php">My Bookings</a></li>
-            <li>
-                <form action="logout.php" method="post" class="logout-form">
-                    <?php echo csrf_field(); ?>
-                    <button type="submit" class="logout-btn">Log out</button>
-                </form>
-            </li>
-        </ul>
-    </nav>
+<header class="site-header">
+    <div class="container site-header-inner">
+        <a class="brand" href="index.html">
+            <span class="brand-mark" aria-hidden="true">HB</span>
+            <span>Hotel Booking System</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Main">
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#rooms">Rooms</a></li>
+                <li><a href="customer-dashboard.php">My Bookings</a></li>
+                <li>
+                    <form action="logout.php" method="post">
+                        <?php echo csrf_field(); ?>
+                        <button type="submit" class="btn btn-sm btn-ghost-on-dark">Log out</button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </header>
 
-<main id="main-content" class="book-now-form">
+<main id="main-content" class="booking-main">
+  <div class="container-narrow">
 
-    <h1>Book a Room</h1>
+    <div class="booking-card">
 
-    <p class="intro">
-        Signed in as <?php echo e(auth_user_name()); ?>. Your booking will be
-        linked to this account, so there is no need to re-enter your details.
+    <h1>Book a room</h1>
+
+    <p class="booking-intro">
+        Signed in as <strong><?php echo e(auth_user_name()); ?></strong>.
+        Your booking is linked to this account, so there is no need to
+        re-enter your name or email address.
     </p>
 
     <?php echo $flash; ?>
@@ -471,7 +483,7 @@ $flash = flash_render();
 
             <?php echo csrf_field(); ?>
 
-            <div class="form-group">
+            <div class="field">
                 <label for="room_type_id">Room type</label>
                 <select id="room_type_id" name="room_type_id" required
                     <?php if (isset($errors['room_type_id'])): ?>
@@ -502,7 +514,7 @@ $flash = flash_render();
                 <?php endif; ?>
             </div>
 
-            <div class="form-group">
+            <div class="field">
                 <label for="check_in">Check-in date</label>
                 <input
                     type="date"
@@ -521,7 +533,7 @@ $flash = flash_render();
                 <?php endif; ?>
             </div>
 
-            <div class="form-group">
+            <div class="field">
                 <label for="check_out">Check-out date</label>
                 <input
                     type="date"
@@ -542,7 +554,7 @@ $flash = flash_render();
                 <?php endif; ?>
             </div>
 
-            <div class="form-group">
+            <div class="field">
                 <label for="guest_count">Number of guests</label>
                 <input
                     type="number"
@@ -567,40 +579,51 @@ $flash = flash_render();
             <!-- Filled in by booknow.js. Purely an on-screen estimate: the
                  server recalculates everything from the database when the form
                  is submitted. -->
+            <!-- Estimate: clearly marked as indicative. The authoritative
+                 figures are recalculated by the server on submission. -->
             <div class="estimate" id="estimate" aria-live="polite">
-                <h2>Estimate</h2>
-                <p id="estimate-text">Choose a room type and your dates to see an estimate.</p>
+                <p class="estimate-label">Estimate</p>
+                <p class="estimate-value" id="estimate-text">
+                    Choose a room type and your dates to see an estimate.
+                </p>
                 <p class="estimate-note">
-                    This is a guide only. The final price and the final
-                    availability check are always calculated on the server when
-                    you submit this form.
+                    <strong>Guide only.</strong> The price you are charged and
+                    the final availability check are always calculated on the
+                    server when you submit this form.
                 </p>
             </div>
 
-            <div class="form-group">
-                <button type="button" class="secondary-btn" id="check-availability-btn">
-                    Check availability
+            <div class="field availability-check">
+                <button type="button" class="btn btn-secondary btn-block" id="check-availability-btn">
+                    Check availability for these dates
                 </button>
-                <p id="availability-result" role="status" aria-live="polite"></p>
+                <p id="availability-result" class="availability-result" role="status" aria-live="polite"></p>
             </div>
 
-            <div class="form-group">
-                <button type="submit" class="submit-btn">Request booking</button>
+            <div class="booking-submit">
+                <button type="submit" class="btn btn-primary btn-block">Request booking</button>
+                <p class="form-note">
+                    Submitting creates a booking <strong>request</strong> with
+                    the status <strong>pending</strong>. It is not confirmed
+                    until our staff review it. No payment is taken and no card
+                    details are collected.
+                </p>
             </div>
-
-            <p class="form-note">
-                No payment is taken. Your booking is created with the status
-                <strong>pending</strong> and will be reviewed by our staff.
-            </p>
 
         </form>
 
     <?php endif; ?>
 
+    </div>
+  </div>
 </main>
 
-<footer>
-    <p>&copy; 2025 Hotel Booking System. All Rights Reserved.</p>
+<footer class="site-footer">
+    <div class="container">
+        <p class="footer-bottom">
+            &copy; 2026 Hotel Booking System &mdash; student coursework. All prices in AUD.
+        </p>
+    </div>
 </footer>
 
 <script src="booknow.js"></script>
