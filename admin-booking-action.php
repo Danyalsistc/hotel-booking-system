@@ -32,13 +32,32 @@ require_admin();
 //  A status change must never happen on a GET request.
 // ---------------------------------------------------------------------------
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+
+    // Respond 405 and stop here. An earlier version set 405 and then called
+    // auth_redirect(), whose header('Location: ...', true, 302) silently
+    // overwrote the status code - so the endpoint advertised 405 but actually
+    // answered 302. No booking was ever modified either way, but the status
+    // now matches what the code says, and matches logout.php's behaviour for
+    // the same situation.
     if (!headers_sent()) {
         http_response_code(405);
         header('Allow: POST');
+        header('Content-Type: text/html; charset=utf-8');
     }
 
-    flash_set('error', 'That action must be submitted from the dashboard.');
-    auth_redirect('admin-dashboard.php');
+    echo '<!DOCTYPE html><html lang="en-AU"><head><meta charset="utf-8">'
+       . '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+       . '<title>Action not allowed - Hotel Booking System</title>'
+       . '<link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="css.css">'
+       . '</head><body class="auth-page"><main id="main-content" class="auth-main">'
+       . '<div class="auth-card legacy-notice"><h1>Action not allowed</h1>'
+       . '<p>Booking status changes must be submitted from the administrator '
+       . 'dashboard, not opened as a link.</p>'
+       . '<a class="btn btn-primary btn-block" href="admin-dashboard.php">'
+       . 'Return to the dashboard</a>'
+       . '</div></main></body></html>';
+
+    exit;
 }
 
 csrf_require();

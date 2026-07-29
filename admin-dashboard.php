@@ -133,20 +133,40 @@ try {
     $loadError = 'Dashboard data could not be loaded right now. Please try again shortly.';
 }
 
-/** Format a Y-m-d date for display. */
-function admin_date(string $value): string
-{
-    $date = DateTimeImmutable::createFromFormat('!Y-m-d', substr($value, 0, 10));
-
-    return $date === false ? $value : $date->format('j M Y');
-}
-
-/** Format a DATETIME for display. */
+/** Format a DATETIME for display (date only - keeps the column narrow). */
 function admin_datetime(string $value): string
 {
     $date = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $value);
 
-    return $date === false ? $value : $date->format('j M Y, g:ia');
+    return $date === false ? $value : $date->format('j M Y');
+}
+
+/**
+ * Render a stay as one compact range, e.g. "8 - 10 Aug 2026".
+ *
+ * Check-in and check-out previously occupied two columns each roughly 120px
+ * wide. On an eleven-column table that pushed the Actions column - the
+ * administrator's primary controls - off the visible area at ordinary desktop
+ * widths. Both dates are still shown in full; they simply share one cell.
+ */
+function admin_stay(string $in, string $out): string
+{
+    $a = DateTimeImmutable::createFromFormat('!Y-m-d', substr($in, 0, 10));
+    $b = DateTimeImmutable::createFromFormat('!Y-m-d', substr($out, 0, 10));
+
+    if ($a === false || $b === false) {
+        return $in . ' - ' . $out;
+    }
+
+    if ($a->format('Y-m') === $b->format('Y-m')) {
+        return $a->format('j') . ' - ' . $b->format('j M Y');
+    }
+
+    if ($a->format('Y') === $b->format('Y')) {
+        return $a->format('j M') . ' - ' . $b->format('j M Y');
+    }
+
+    return $a->format('j M Y') . ' - ' . $b->format('j M Y');
 }
 
 $flash = flash_render();
@@ -270,8 +290,7 @@ $flash = flash_render();
                             <th scope="col">Customer</th>
                             <th scope="col">Room type</th>
                             <th scope="col">Room</th>
-                            <th scope="col">Check-in</th>
-                            <th scope="col">Check-out</th>
+                            <th scope="col">Stay</th>
                             <th scope="col">Guests</th>
                             <th scope="col">Total</th>
                             <th scope="col">Status</th>
@@ -286,8 +305,7 @@ $flash = flash_render();
                                 <td data-label="Customer"><?php echo e($booking['customer']); ?></td>
                                 <td data-label="Room type"><?php echo e($booking['room_type']); ?></td>
                                 <td data-label="Room"><?php echo e($booking['room_number']); ?></td>
-                                <td data-label="Check-in"><?php echo e(admin_date($booking['check_in'])); ?></td>
-                                <td data-label="Check-out"><?php echo e(admin_date($booking['check_out'])); ?></td>
+                                <td data-label="Stay"><?php echo e(admin_stay($booking['check_in'], $booking['check_out'])); ?></td>
                                 <td data-label="Guests"><?php echo e((string) $booking['guests']); ?></td>
                                 <td data-label="Total">
                                     <strong>AUD <?php echo e(number_format((float) $booking['total'], 2)); ?></strong>

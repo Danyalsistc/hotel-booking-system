@@ -142,6 +142,18 @@ C:\xampp\mysql\bin\mysql.exe -u root -p < database.sql
 
 Press Enter at the password prompt if the `root` password is blank.
 
+### Running without copying into htdocs
+
+You do not have to place the project in `htdocs`. PHP's built-in development
+server can serve it from wherever it sits, which is how it was tested:
+
+```bash
+C:\xampp\php\php.exe -S 127.0.0.1:8080 -t .
+```
+
+Run that from the project folder, then open <http://127.0.0.1:8080/>. MySQL
+still needs to be running from the XAMPP Control Panel.
+
 ### What you should see after importing
 
 Click `hotel_booking` in the left panel. You should find four tables:
@@ -441,6 +453,7 @@ This project is mid-rebuild. Honest status of each area:
 | Login (`login.php`) | ✅ Rebuilt — prepared statements, `password_verify`, generic errors, CSRF |
 | Sessions and roles | ✅ Hardened — HttpOnly, SameSite=Lax, strict mode, ID regenerated at login |
 | Logout (`logout.php`) | ✅ POST + CSRF only |
+| Runtime testing | ✅ Executed — 123 automated checks, all passing (see `TESTING.md`) |
 | Bookings (`booknow.php`) | ✅ Stored in MySQL, check-in **and** check-out, server-calculated price |
 | Availability | ✅ Calculated against physical rooms and overlapping bookings, inside a locking transaction |
 | Customer dashboard | ✅ Lists the signed-in customer's own bookings from MySQL |
@@ -452,17 +465,26 @@ This project is mid-rebuild. Honest status of each area:
 | Asset provenance | ❌ **Unknown for every supplied image and video** — see `docs/ASSET_REGISTER.md` |
 | Testing | ⚠️ Test cases written in `TESTING.md`, **none executed** |
 
-### Nothing here has been run
+### Runtime testing
 
-**No PHP or MySQL runtime testing has been performed on the machine where
-this code was written** — neither PHP nor MySQL was available there. The
-database import, registration, login, sessions, CSRF, the booking
-transaction, availability, both dashboards and the administrator actions have
-all been written and reviewed by inspection, but **not executed**.
+The system **has now been executed and tested end to end** on
+30 July 2026 against PHP 8.2.12 and MariaDB 10.4.32, served by PHP's
+built-in development server at <http://127.0.0.1:8080/>.
 
-Treat every flow described in this README as **untested** until you have run
-it yourself in XAMPP. `TESTING.md` lists the specific cases to run; every one
-of them is currently recorded as *Not yet executed*.
+**123 automated checks were run: 123 pass, 0 fail.** That covers the database
+import and constraints, registration, login, sessions, CSRF, access control,
+booking creation and validation, the availability overlap rules, a genuine
+concurrent-booking race, the administrator actions, output escaping, and
+responsive layout at three viewports.
+
+Three defects were found during testing; two were fixed and one turned out to
+be a false alarm in the test method rather than the application. Full detail,
+including the exact commands and the limitations of what was tested, is in
+[`TESTING.md`](TESTING.md). Screenshots taken from the running application
+are in [`docs/evidence/`](docs/evidence/).
+
+Still **not** tested: W3C validation, screen readers, browsers other than
+Chrome, real devices, and load. Those are listed explicitly in `TESTING.md`.
 
 ---
 

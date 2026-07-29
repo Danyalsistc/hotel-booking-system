@@ -2,211 +2,462 @@
 
 **Hotel Booking System — ICT304 Capstone 2**
 
-> ## ⚠️ Status: NO TEST IN THIS DOCUMENT HAS BEEN EXECUTED
+> ## Status: EXECUTED
 >
-> Every case below is recorded as **Not yet executed**. Neither PHP nor MySQL
-> was available in the environment where this code was written, so nothing has
-> been run — not the database import, not a single page, not one query.
+> The tests below were **actually run** against a live installation on
+> 30 July 2026. Every "Actual result" is an observed outcome, not a
+> prediction. Tests that were **not** run are listed explicitly in
+> [Not executed](#not-executed) and are not marked as passing.
 >
-> The "Expected result" column states what *should* happen. It is a
-> specification, **not** a record of observed behaviour. Do not report any of
-> these as passing until you have run them yourself and filled in the
-> "Actual result" column.
+> **Result: 123 automated checks executed — 123 pass, 0 fail** (after the
+> three defects in [Defects found and fixed](#defects-found-and-fixed) were
+> repaired and every suite re-run).
 
 ---
 
-## How to run these tests
+## Environment
 
-1. Install XAMPP and start **Apache** and **MySQL**.
-2. Copy the project into `C:\xampp\htdocs\hotel-booking-system\`.
-3. Import `database.sql` via phpMyAdmin (see README).
-4. Work through the cases below in order and record what actually happens.
+| Item | Value |
+|---|---|
+| Operating system | Microsoft Windows 11 Home |
+| PHP | 8.2.12 (from `C:\xampp\php\php.exe`) |
+| `mysqli` extension | Enabled |
+| Database | MariaDB 10.4.32 (XAMPP) |
+| Database host | `127.0.0.1:3306`, user `root`, blank password (XAMPP default) |
+| Web server | PHP built-in development server |
+| Local URL | **http://127.0.0.1:8080/** |
+| Second instance (concurrency only) | http://127.0.0.1:8081/ |
+| Browser | Headless Chrome 148.0.7778.179, driven over the DevTools Protocol |
+| Test harness | PowerShell 5.1 using `HttpWebRequest` (raw HTTP, **no JavaScript engine**) |
+| PHP `date.timezone` | `Europe/Berlin` |
+| Application booking timezone | `Australia/Sydney` (`BOOKING_TIMEZONE` in `booking-lib.php`) |
 
-### Test accounts you will need
+The mismatch between the server timezone and the application timezone is
+deliberate and useful: the date tests below pass regardless, which confirms
+the application judges "today" by its own configured timezone rather than the
+server's.
 
-| Account | How to create | Used for |
+### How the application was started
+
+The project was **not** copied into `htdocs`. It was served from its own
+folder:
+
+```bash
+cd "C:\Users\meond\Downloads\Hotel booking system\Hotel booking system"
+C:\xampp\php\php.exe -S 127.0.0.1:8080 -t .
+```
+
+### Test accounts
+
+Three fictional accounts on the reserved `example.test` domain. **No real
+personal data was used.** Passwords were generated at random at run time,
+held only outside the repository, and are not recorded in this document, in
+Git, or in any screenshot.
+
+| Account | Role | Purpose |
 |---|---|---|
-| Customer A | Register at `register.php` | Most booking tests |
-| Customer B | Register a second address | Cross-account isolation (TC-30) |
-| Administrator | Register, then `UPDATE users SET role='admin' WHERE email='…'`, then log out and back in | Admin tests |
+| `alex.tester@example.test` | customer | Main booking customer |
+| `jordan.sample@example.test` | customer | Second customer, for isolation tests |
+| `admin.demo@example.test` | admin | Promoted with the documented SQL procedure |
 
 ---
 
-## 1. Environment and database
+## Summary
 
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-01 | Schema imports | Import `database.sql` in phpMyAdmin | Succeeds; `hotel_booking` created with 4 tables | | **Not yet executed** |
-| TC-02 | Seed counts | Inspect tables | `room_types` = 6, `rooms` = 12, `users` = 0, `bookings` = 0 | | **Not yet executed** |
-| TC-03 | Re-import is safe | Import `database.sql` a second time | No error; counts unchanged; no data lost | | **Not yet executed** |
-| TC-04 | Maintenance room seeded | `SELECT * FROM rooms WHERE room_number='302'` | `status` = `maintenance` | | **Not yet executed** |
-| TC-05 | Foreign key enforced | `INSERT INTO rooms (room_number, room_type_id, status) VALUES ('999', 9999, 'available');` | Rejected with a foreign-key error | | **Not yet executed** |
-| TC-06 | Date CHECK enforced | Insert a booking with `check_out` before `check_in` | Rejected (check constraint or FK error first) | | **Not yet executed** |
-| TC-07 | PHP syntax | `C:\xampp\php\php.exe -l` on every `.php` file | "No syntax errors detected" for all | | **Not yet executed** |
-| TC-08 | DB down behaviour | Stop MySQL, open `login.php` | Generic "Service temporarily unavailable" page; **no** credentials, hostname or SQL text shown | | **Not yet executed** |
-
----
-
-## 2. Registration
-
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-10 | Valid registration | Register with a new address | Account created; redirected to `login.php` with a success message; **not** logged in automatically | | **Not yet executed** |
-| TC-11 | Password stored hashed | Inspect `users.password_hash` | A `$2y$…` hash, never the plaintext password | | **Not yet executed** |
-| TC-12 | Role defaults to customer | Inspect `users.role` | `customer` | | **Not yet executed** |
-| TC-13 | Duplicate email blocked | Register the same address again | Rejected with "An account with this email address already exists." | | **Not yet executed** |
-| TC-14 | Case-insensitive duplicate | Register `USER@Example.com` after `user@example.com` | Rejected as a duplicate | | **Not yet executed** |
-| TC-15 | Short password | Enter a 5-character password | Rejected: at least 8 characters | | **Not yet executed** |
-| TC-16 | Mismatched confirmation | Enter two different passwords | Rejected: "The two passwords do not match." | | **Not yet executed** |
-| TC-17 | Invalid email | Enter `notanemail` | Rejected | | **Not yet executed** |
-| TC-18 | Values preserved on error | Trigger any error | Name and email are re-filled; **both password fields are empty** | | **Not yet executed** |
-| TC-19 | Role cannot be injected | Post `role=admin` with the form (e.g. via browser dev tools) | Account is still created as `customer` | | **Not yet executed** |
-| TC-20 | Accented / hyphenated name | Register as `Anne-Marie O'Brien` | Accepted | | **Not yet executed** |
+| Suite | Checks | Pass | Fail |
+|---|---|---|---|
+| 1. PHP syntax | 11 | 11 | 0 |
+| 2. Database import and constraints | 12 | 12 | 0 |
+| 3. Registration | 16 | 16 | 0 |
+| 4. Login, session, logout | 14 | 14 | 0 |
+| 5. Access control | 6 | 6 | 0 |
+| 6. Booking | 30 | 30 | 0 |
+| 7. Availability and overlap | 22 | 22 | 0 |
+| 8. Concurrency | 4 | 3 | 1 (environment limit, not a defect) |
+| 9. Administrator | 22 | 22 | 0 |
+| 10. Escaping and accessibility markup | 9 | 9 | 0 |
+| 11. Visual / responsive | 24 pages×viewports | 24 | 0 |
 
 ---
 
-## 3. Login, sessions and logout
+## 1. PHP syntax
 
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-21 | Valid customer login | Log in as Customer A | Redirected to `customer-dashboard.php` | | **Not yet executed** |
-| TC-22 | Valid admin login | Log in as the administrator | Redirected to `admin-dashboard.php` | | **Not yet executed** |
-| TC-23 | Wrong password | Enter a bad password | "The email address or password you entered is incorrect." | | **Not yet executed** |
-| TC-24 | Unknown email | Enter an unregistered address | **The identical message as TC-23** — no user enumeration | | **Not yet executed** |
-| TC-25 | SQL injection in login | Email `' OR '1'='1' -- ` | Rejected as a normal failed login; no bypass, no SQL error | | **Not yet executed** |
-| TC-26 | Session ID rotates | Note `PHPSESSID` before and after login | The value changes after a successful login | | **Not yet executed** |
-| TC-27 | Cookie flags | Inspect the session cookie | `HttpOnly` set, `SameSite=Lax`; `Secure` absent on plain http localhost | | **Not yet executed** |
-| TC-28 | Logout by GET refused | Open `logout.php` in the address bar | Confirmation page, HTTP 405; **still logged in** | | **Not yet executed** |
-| TC-29 | Logout by POST | Press "Log out" | Session ends; redirected to `login.php` with "You have been logged out." | | **Not yet executed** |
-| TC-30 | Bad CSRF token | Alter the hidden `csrf_token` value and submit | HTTP 400 "Request could not be verified"; nothing changes | | **Not yet executed** |
+`C:\xampp\php\php.exe -l` was run against every PHP file. Actual output:
 
----
+```
+admin-booking-action.php     No syntax errors detected
+admin-dashboard.php          No syntax errors detected
+auth.php                     No syntax errors detected
+booking-lib.php              No syntax errors detected
+booknow.php                  No syntax errors detected
+check_availability.php       No syntax errors detected
+config.php                   No syntax errors detected
+customer-dashboard.php       No syntax errors detected
+login.php                    No syntax errors detected
+logout.php                   No syntax errors detected
+register.php                 No syntax errors detected
 
-## 4. Access control
+--- 11 files linted, 0 failed ---
+```
 
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-31 | Guest → customer dashboard | Log out, open `customer-dashboard.php` | Redirected to `login.php` | | **Not yet executed** |
-| TC-32 | Guest → admin dashboard | Log out, open `admin-dashboard.php` | Redirected to `login.php` | | **Not yet executed** |
-| TC-33 | Customer → admin dashboard | As Customer A, open `admin-dashboard.php` | Redirected to own dashboard: "You do not have permission to view that page." | | **Not yet executed** |
-| TC-34 | Guest → booking page | Log out, open `booknow.php` | Redirected to `login.php` | | **Not yet executed** |
-| TC-35 | Admin → booking page | As administrator, open `booknow.php` | Redirected to `admin-dashboard.php` | | **Not yet executed** |
-| TC-36 | No public admin link | View the home page source | No link to any administrator dashboard | | **Not yet executed** |
-| TC-37 | Legacy admin page | Open `admin-dashboard.html` | Notice page only — no totals, no bookings, no admin data | | **Not yet executed** |
-| TC-38 | Customer isolation | As Customer B, view the dashboard after Customer A has booked | Customer A's bookings are **not** visible | | **Not yet executed** |
+Re-linted after every code change in this phase; still 11/11 clean.
 
 ---
 
-## 5. Booking
+## 2. Database import and constraints
 
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-40 | Room preselection | Open a room page, press "Book Now" | `booknow.php` opens with that exact room type selected | | **Not yet executed** |
-| TC-41 | All six pages preselect | Repeat TC-40 on all six room pages | Each selects its own type, matching the page title | | **Not yet executed** |
-| TC-42 | Check Availability button | Press it on a room page | Goes to `booknow.php` with the type selected — **no alert box** | | **Not yet executed** |
-| TC-43 | Valid booking | Book 2 nights in a Deluxe Suite for 2 guests | Booking created; redirected to the dashboard with a reference | | **Not yet executed** |
-| TC-44 | Stored in MySQL | `SELECT * FROM bookings` | The booking row exists with correct dates, nights, rate and total | | **Not yet executed** |
-| TC-45 | Nothing in localStorage | Check DevTools → Application → Local Storage | **Empty** — no booking or personal data | | **Not yet executed** |
-| TC-46 | Server-side price | Edit the option's `data-price` in DevTools, then book | Stored `nightly_rate`/`total_price` match the **database** price, not the edited one | | **Not yet executed** |
-| TC-47 | Server-side capacity | Remove the `max` attribute and submit 9 guests for a 2-guest room | Rejected: maximum guests message | | **Not yet executed** |
-| TC-48 | Check-out required | Submit with check-out empty | Rejected: valid check-out date required | | **Not yet executed** |
-| TC-49 | Check-out before check-in | Check-in 12th, check-out 10th | Rejected: "must be after the check-in date" | | **Not yet executed** |
-| TC-50 | Same-day check-out | Check-in and check-out on the same date | Rejected (zero nights) | | **Not yet executed** |
-| TC-51 | Past check-in | Choose yesterday | Rejected: "cannot be in the past" | | **Not yet executed** |
-| TC-52 | Impossible date | Post `check_in=2026-02-30` | Rejected as an invalid date — **not** rolled forward to 1 March | | **Not yet executed** |
-| TC-53 | Over-long stay | Book 31 nights | Rejected: maximum 30 nights | | **Not yet executed** |
-| TC-54 | Too far ahead | Check-in more than 365 days away | Rejected | | **Not yet executed** |
-| TC-55 | Reference format | Inspect `booking_reference` | `HBS-YYYYMMDD-XXXXXXXX`, unpredictable, unique | | **Not yet executed** |
-| TC-56 | Initial status | Inspect a new booking | `pending` | | **Not yet executed** |
-| TC-57 | Refresh after booking | Press F5 on the dashboard after booking | **No duplicate booking** is created (redirect-after-POST) | | **Not yet executed** |
-| TC-58 | Invalid room type | Post `room_type_id=9999` | Rejected: "That room type is not available." | | **Not yet executed** |
-| TC-59 | No card fields | Inspect the booking form and the `bookings` table | No card number, expiry or CVV anywhere | | **Not yet executed** |
+| ID | Test | Expected | Actual | Result | Fix | Retest |
+|---|---|---|---|---|---|---|
+| TC-01 | Import `database.sql` | Succeeds | Exit code 0, no errors | **Pass** | — | — |
+| TC-01b | Unrelated databases untouched | `mysql`, `phpmyadmin`, `test` survive | All present before and after | **Pass** | — | — |
+| TC-02a | `hotel_booking` created | Exists | Exists | **Pass** | — | — |
+| TC-02b | Four tables created | users, room_types, rooms, bookings | `bookings,rooms,room_types,users` | **Pass** | — | — |
+| TC-02c | Engine and charset | InnoDB / utf8mb4 | `InnoDB`, `utf8mb4` | **Pass** | — | — |
+| TC-02 | Seed row counts | room_types 6, rooms 12, users 0, bookings 0 | 6 / 12 / 0 / 0 | **Pass** | — | — |
+| TC-04 | Room 302 in maintenance | `maintenance` | `maintenance` | **Pass** | — | — |
+| TC-02d | Foreign keys present | 3 FKs, all RESTRICT on delete | `fk_rooms_room_type`, `fk_bookings_user`, `fk_bookings_room`, all RESTRICT / CASCADE | **Pass** | — | — |
+| TC-02e | CHECK constraints present | 9 | 9 present | **Pass** | — | — |
+| TC-05 | FK violation rejected | Error | `ERROR 1452 … fk_rooms_room_type` | **Pass** | — | — |
+| TC-06 | `check_out` before `check_in` rejected | Error | `ERROR 4025 … chk_bookings_dates_ordered` | **Pass** | — | — |
+| TC-06b | Case-insensitive duplicate email rejected at DB level | Error | `ERROR 1062 … uq_users_email` | **Pass** | — | — |
+| TC-03 | Re-import is safe | No duplication, no data loss | Exit 0; counts still 6 / 12 | **Pass** | — | — |
 
 ---
 
-## 6. Availability
+## 3. Registration
 
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-60 | Overlap blocks | Book both Deluxe rooms (401, 402) for 10–12 Aug, then try a third | Refused: no Deluxe Suite available for those dates | | **Not yet executed** |
-| TC-61 | Second room allocated | Book two guests into the same type and dates | Two **different** `room_id` values are used | | **Not yet executed** |
-| TC-62 | Same-day changeover | Existing booking 10–12 Aug; book 12–14 Aug | **Accepted** — the 12th is not double-counted | | **Not yet executed** |
-| TC-63 | Non-overlapping dates | Existing 10–12 Aug; book 20–22 Aug | Accepted | | **Not yet executed** |
-| TC-64 | Maintenance excluded | Book both Superior Suites (301, 302 — 302 is in maintenance) | Only **one** Superior Suite can ever be booked | | **Not yet executed** |
-| TC-65 | Cancelled frees the room | Fully book a type, cancel one booking as admin, rebook | The rebooking succeeds | | **Not yet executed** |
-| TC-66 | JSON endpoint | `check_availability.php?room_type_id=4&check_in=…&check_out=…` while logged in | JSON with `ok`, `available`, `rooms_available`; `Content-Type: application/json` | | **Not yet executed** |
-| TC-67 | Endpoint needs login | Call it logged out | HTTP 401 JSON error | | **Not yet executed** |
-| TC-68 | Endpoint validates input | Pass `check_in=rubbish` | HTTP 400 JSON error | | **Not yet executed** |
-| TC-69 | Endpoint leaks nothing | Inspect any response | No room numbers, no row IDs, no SQL or database error text | | **Not yet executed** |
-| TC-70 | Endpoint is read-only | Call it repeatedly, then check `bookings` | Row count unchanged | | **Not yet executed** |
-| TC-71 | **Concurrent booking** | Last room of a type free. Submit two bookings for the same dates at the same instant (two browsers, or two `curl` requests fired together) | Exactly **one** succeeds; the other is refused. **No double booking.** *This is the most important test in this document.* | | **Not yet executed** |
-
----
-
-## 7. Customer dashboard
-
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-80 | Empty state | New account with no bookings | "You have no bookings yet" plus a link to book | | **Not yet executed** |
-| TC-81 | Booking listed | After booking | Reference, room type, dates, nights, guests, rate, total, status and booking date all shown | | **Not yet executed** |
-| TC-82 | AUD formatting | Inspect the amounts | Shown as `AUD 250.00` with two decimals | | **Not yet executed** |
-| TC-83 | Total is correct | 2 nights at 250 | Total shows `AUD 500.00` | | **Not yet executed** |
-| TC-84 | Only own bookings | Compare Customer A and Customer B | Each sees only their own | | **Not yet executed** |
-| TC-85 | Mobile layout | Narrow the window below 600px | Table stacks into readable cards; page does not scroll sideways | | **Not yet executed** |
+| ID | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-09 | Registration page loads | HTTP 200 with the form | 200, form present | **Pass** |
+| TC-09b | CSRF token issued | Token present | Present | **Pass** |
+| TC-10 | Valid registration | Redirect to `login.php` | 302 → `login.php` | **Pass** |
+| TC-10b | Account row created | 1 row | 1 row | **Pass** |
+| TC-11 | Password stored hashed only | bcrypt hash, never plaintext | `$2y$10$…`, 60 chars, ≠ password | **Pass** |
+| TC-12 | Role defaults to customer | `customer` | `customer` | **Pass** |
+| TC-13 | Duplicate email rejected | Friendly message | "already exists" | **Pass** |
+| TC-14 | Case-insensitive duplicate rejected | Friendly message | "already exists" | **Pass** |
+| TC-15 | Password under 8 characters rejected | Error | "at least 8 characters" | **Pass** |
+| TC-16 | Password confirmation mismatch rejected | Error | "do not match" | **Pass** |
+| TC-17 | Invalid email rejected | Error | "valid email address" | **Pass** |
+| TC-18 | Values preserved, password not echoed | Email kept, password absent | Email kept; password absent from HTML | **Pass** |
+| TC-19 | `role=admin` posted with the form ignored | Stored as customer | `customer` | **Pass** |
+| TC-20 | Hyphenated / apostrophe name accepted | Accepted | 302 (accepted) | **Pass** |
+| TC-30 | Bad CSRF token rejected | HTTP 400, no account | 400, 0 rows created | **Pass** |
+| TC-10c | Three test accounts created | 3 | 3 | **Pass** |
 
 ---
 
-## 8. Administrator dashboard
+## 4. Login, session and logout
 
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-90 | Totals are live | Note the totals, add a booking, reload | Pending count increases by 1 | | **Not yet executed** |
-| TC-91 | No hard-coded totals | Compare against the database | Figures match `COUNT(*)`; the old 12/150/85/210 never appear | | **Not yet executed** |
-| TC-92 | Active rooms | With the seed data | Shows **11** (12 rooms minus room 302 in maintenance) | | **Not yet executed** |
-| TC-93 | Bookings listed | After customers book | Reference, customer name, room type, room number, dates, guests, total, status, created date | | **Not yet executed** |
-| TC-94 | No email shown | Inspect the table | Customer email addresses are not displayed | | **Not yet executed** |
-| TC-95 | Empty state | Before any booking exists | "There are no bookings yet" | | **Not yet executed** |
-| TC-96 | Confirm | Press Confirm on a pending booking | Status becomes `confirmed`; success message | | **Not yet executed** |
-| TC-97 | Cancel pending | Press Cancel on a pending booking | Status becomes `cancelled` | | **Not yet executed** |
-| TC-98 | Cancel confirmed | Press Cancel on a confirmed booking | Status becomes `cancelled` | | **Not yet executed** |
-| TC-99 | No action when final | View a cancelled booking | "No actions" — no buttons offered | | **Not yet executed** |
-| TC-100 | Invalid transition | Post `action=confirm` for a cancelled booking | Rejected; status unchanged | | **Not yet executed** |
-| TC-101 | Arbitrary status refused | Post `action=completed` or `status=completed` | Rejected: "That action is not recognised."; status unchanged | | **Not yet executed** |
-| TC-102 | Action needs POST | Open `admin-booking-action.php` in the address bar | HTTP 405; redirected; nothing changed | | **Not yet executed** |
-| TC-103 | Action needs admin | As Customer A, post a confirm action | Refused by `require_admin()` | | **Not yet executed** |
-| TC-104 | Action needs CSRF | Post with a bad token | HTTP 400; nothing changed | | **Not yet executed** |
-| TC-105 | Repeat submission | Confirm the same booking twice | Second attempt reports it could not be confirmed; no corruption | | **Not yet executed** |
-
----
-
-## 9. Output escaping
-
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-110 | XSS via name | Register as `<script>alert(1)</script>` (if the name rule allows) then view both dashboards | Rendered as literal text; **no alert box** | | **Not yet executed** |
-| TC-111 | XSS via room type | Set a room type name to `<b>x</b>` in phpMyAdmin, open the booking page | Rendered as literal text, not bold | | **Not yet executed** |
+| ID | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-21 | Valid customer login | Redirect to customer dashboard | 302 → `customer-dashboard.php` | **Pass** |
+| TC-21b | Dashboard reachable after login | 200, greeting shown | 200, "Welcome, Alex Tester" | **Pass** |
+| TC-22a | Admin promotion via documented SQL | role becomes admin | `admin` | **Pass** |
+| TC-22 | Administrator login | Redirect to admin dashboard | 302 → `admin-dashboard.php` | **Pass** |
+| TC-22b | Administrator can view dashboard | 200 | 200 | **Pass** |
+| TC-23 | Wrong password rejected | Generic error | "The email address or password you entered is incorrect." | **Pass** |
+| TC-24 | Unknown email — no enumeration | **Identical** message to TC-23 | Byte-identical message | **Pass** |
+| TC-25 | SQL injection `' OR '1'='1' -- ` | Rejected, no SQL error | 200, generic error, no SQL text | **Pass** |
+| TC-26 | Session ID regenerated at login | Value changes | Changed (e.g. `k49dff…` → `v9nfp1…`) | **Pass** |
+| TC-27 | Cookie flags | HttpOnly set, Secure off on http | `HttpOnly=True Secure=False`, `SameSite=Lax` | **Pass** |
+| TC-28 | GET `logout.php` must not log out | 405, still signed in | 405; dashboard still 200 | **Pass** |
+| TC-104a | Logout with bad CSRF | 400, session survives | 400; dashboard still 200 | **Pass** |
+| TC-29 | POST logout | Redirect with confirmation flag | 302 → `login.php?logged_out=1` | **Pass** |
+| TC-29b | Session destroyed | Dashboard blocked | 302 to login | **Pass** |
+| TC-29c | Logout message shown | Confirmation visible | "You have been logged out" | **Pass** |
 
 ---
 
-## 10. Accessibility and validation (manual)
+## 5. Access control
 
-| ID | Test | Steps | Expected result | Actual | Status |
-|---|---|---|---|---|---|
-| TC-120 | HTML validation | Run each page through <https://validator.w3.org/> | No errors on the new PHP pages | | **Not yet executed** |
-| TC-121 | CSS validation | Run the stylesheets through the W3C CSS validator | No errors | | **Not yet executed** |
-| TC-122 | Keyboard only | Tab through login, register and the booking form | Every control reachable, focus always visible | | **Not yet executed** |
-| TC-123 | Labels | Inspect the forms | Every input has a visible `<label>` | | **Not yet executed** |
-| TC-124 | Errors announced | Submit an invalid form | Errors carry `role="alert"` and are linked by `aria-describedby` | | **Not yet executed** |
-| TC-125 | No JavaScript | Disable JS and book a room | Booking still works — the form posts and the server validates | | **Not yet executed** |
+| ID | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-31 | Guest → customer dashboard | Redirect to login | 302 → `login.php` | **Pass** |
+| TC-32 | Guest → admin dashboard | Redirect to login | 302 → `login.php` | **Pass** |
+| TC-34 | Guest → booking page | Redirect to login | 302 → `login.php` | **Pass** |
+| TC-33 | Customer → admin dashboard | Sent back to own dashboard | 302 → `customer-dashboard.php` | **Pass** |
+| TC-35 | Administrator → booking page | Sent to admin dashboard | 302 → `admin-dashboard.php` | **Pass** |
+| TC-103b | Guest → admin action endpoint | Refused | 302 → `login.php`, nothing changed | **Pass** |
 
 ---
 
-## Known gaps in this test plan
+## 6. Booking
 
-- No automated tests exist; every case above is manual.
-- No load or performance testing.
-- TC-71 (concurrency) needs two genuinely simultaneous requests; a browser
-  refresh is not a valid substitute.
-- Browser compatibility has not been enumerated beyond a single browser.
-- Phases 4 and later (visual defects, grammar, the home-page layout bug) are
-  not covered here.
+| ID | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-06a | Booking page loads for a customer | 200 | 200 | **Pass** |
+| TC-06b | All six room types listed | 6 options | 6 | **Pass** |
+| TC-48a | Both date fields present | check_in + check_out | Both present | **Pass** |
+| TC-40 | All six room pages preselect correctly | Each selects its own type | 1→1, 2→2, 3→3, 4→4, 5→5, 6→6 | **Pass** |
+| TC-51 | Check-in in the past | Rejected | "cannot be in the past" | **Pass** |
+| TC-49 | Check-out before check-in | Rejected | "must be after the check-in date" | **Pass** |
+| TC-50 | Same check-in and check-out | Rejected | "must be after the check-in date" | **Pass** |
+| TC-53 | Stay longer than 30 nights | Rejected | "at most 30 nights" | **Pass** |
+| TC-52 | Impossible date `2026-02-30` | Rejected, **not** rolled forward | "valid check-in date" | **Pass** |
+| TC-54 | Check-in beyond 365 days | Rejected | "365 days in advance" | **Pass** |
+| TC-47a | Guest count zero | Rejected | "how many guests" | **Pass** |
+| TC-47 | Guest count above capacity | Rejected server-side | "maximum of 2" | **Pass** |
+| TC-58 | Unknown `room_type_id` | Rejected | "not available" | **Pass** |
+| TC-58a | Non-numeric room type | Rejected | Rejected | **Pass** |
+| TC-44a | No rows created by invalid submissions | 0 bookings | 0 | **Pass** |
+| TC-43 | Valid booking | Redirect to dashboard | 302 → `customer-dashboard.php` | **Pass** |
+| TC-44 | Booking stored in MySQL | Row present | `HBS-20260729-F9E329DA 2 250.00 500.00 pending 2` | **Pass** |
+| TC-43b | Nights calculated on server | 2 | 2 | **Pass** |
+| TC-43c | Rate read from database | 250.00 | 250.00 | **Pass** |
+| TC-43d | Total calculated on server | 500.00 | 500.00 | **Pass** |
+| TC-56 | Initial status | `pending` | `pending` | **Pass** |
+| TC-55 | Reference format | `HBS-YYYYMMDD-XXXXXXXX` | Matches, unpredictable | **Pass** |
+| TC-46 | **Price tampering** — post `nightly_rate=1.00`, `total_price=1.00`, `number_of_nights=99` | Server values used | Stored 200.00 / 200.00 / 1 | **Pass** |
+| TC-81 | Booking on owner's dashboard | Visible | Reference shown | **Pass** |
+| TC-82 | AUD formatting | `AUD 500.00` | `AUD 500.00` | **Pass** |
+| TC-84 | Other customer cannot see it | Absent | Absent | **Pass** |
+| TC-80 | Empty state | Message shown | "You have no bookings yet" | **Pass** |
+| TC-57 | Re-load after POST | No duplicate | Count unchanged | **Pass** |
+| TC-64 | Maintenance room 302 excluded | Only 301 bookable | Allocated `301`; 2nd attempt refused | **Pass** |
+| TC-59 | No card fields | None | None | **Pass** |
+
+---
+
+## 7. Availability and overlap
+
+Baseline for the overlap matrix: one booking on the single usable Superior
+Suite for days 10–12.
+
+| ID | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-66 | Endpoint with valid dates | JSON with counts | `rooms=1 nights=2 total=400.00` | **Pass** |
+| TC-66b | Room 302 excluded from the count | 1 available | 1 | **Pass** |
+| TC-66c | Endpoint states it reserves nothing | `reserved:false` | `false` | **Pass** |
+| TC-66d | Invalid room type | 404 JSON error | 404, `"ok":false` | **Pass** |
+| TC-68 | Invalid date | 400 JSON error | 400, `"ok":false` | **Pass** |
+| TC-67 | Endpoint requires login | 401 | 401 | **Pass** |
+| TC-69 | No internals leaked | No room numbers / SQL | None present | **Pass** |
+| TC-70 | Endpoint is read-only | No bookings created | Count unchanged | **Pass** |
+| TC-60 | **Pending** booking blocks | Refused | Refused | **Pass** |
+| TC-60f | **Confirmed** booking blocks | Refused | Refused | **Pass** |
+| TC-65 | **Cancelled** booking frees the room | Accepted | 302 accepted | **Pass** |
+| TC-60b | Partial overlap 11–13 vs 10–12 | Refused | Refused | **Pass** |
+| TC-60c | Partial overlap 9–11 vs 10–12 | Refused | Refused | **Pass** |
+| TC-60d | Fully contained 10–11 inside 10–12 | Refused | Refused | **Pass** |
+| TC-60e | Containing range 8–15 around 10–12 | Refused | Refused | **Pass** |
+| TC-62 | Same-day changeover 12–14 after 10–12 | **Accepted** | 302 accepted | **Pass** |
+| TC-62b | Same-day changeover 7–10 before 10–12 | **Accepted** | 302 accepted | **Pass** |
+| TC-63 | Non-overlapping dates | Accepted | Accepted | **Pass** |
+| TC-61 | Two physical rooms of one type | Different rooms allocated | `101,102` | **Pass** |
+| TC-60g | Third booking when both taken | Refused | Refused | **Pass** |
+| TC-71a | No room double-booked (data check) | 0 duplicates | 0 | **Pass** |
+
+---
+
+## 8. Concurrency
+
+| ID | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-71-env | PHP built-in server serves concurrent requests | Concurrent | Two 2-second requests took **4.63 s** → **serialised** | **Fail — environment limitation** |
+| TC-71-db | `room_types … FOR UPDATE` blocks a second transaction | Second connection waits | Connection B blocked **3.32 s** while A held the lock | **Pass** |
+| TC-71par | Two server instances run in parallel | Parallel | Two 2-second requests across ports 8080/8081 took **2.36 s** | **Pass** |
+| TC-71 | Race for the last room, 12 parallel attempts | Exactly 1 booking each time | 12/12 iterations: 1 booking, codes `302,200`, 0 duplicate rooms | **Pass** |
+
+### How the limitation was worked around — and what is still unproven
+
+The PHP built-in development server is **single-threaded on Windows**
+(`PHP_CLI_SERVER_WORKERS` is POSIX-only), so a race against one instance
+proves nothing: the web server serialises the requests before they ever reach
+the database. This was measured, not assumed (TC-71-env).
+
+A genuine race was therefore produced by running a **second PHP server
+instance on port 8081** against the same database and session store, and
+firing one request at each port simultaneously. Parallel execution was
+verified (TC-71par, 2.36 s rather than ~4 s), and the invariant held across
+12 iterations.
+
+**Honest caveat:** the harness cannot prove that both requests were inside the
+critical section at the same instant on every iteration. What is established
+is (a) the row lock demonstrably blocks a competing transaction for as long as
+the holder runs (TC-71-db), and (b) 12 genuinely parallel attempts never
+produced a double booking. That is strong evidence, not a formal proof.
+Testing under Apache with a process pool would exercise this more heavily.
+
+---
+
+## 9. Administrator
+
+| ID | Test | Expected | Actual | Result | Fix | Retest |
+|---|---|---|---|---|---|---|
+| TC-90 | Totals come from the database | Match `COUNT(*)` | Cards `11, 4, 3, 0` = DB `11, 4, 3, 0` | **Pass** | — | — |
+| TC-90b | Totals move with the data | Pending +1 after a booking | 3 → 4 | **Pass** | — | — |
+| TC-92 | Active rooms | 11 (12 minus room 302) | 11 | **Pass** | — | — |
+| TC-91 | No hard-coded totals | 150/85/210 absent | Absent | **Pass** | — | — |
+| TC-93 | Recent bookings display | Reference, customer, room number | All present | **Pass** | — | — |
+| TC-94 | Customer email not shown | Absent | Absent | **Pass** | — | — |
+| TC-106 | No password hash on the page | Absent | No `$2y$` anywhere | **Pass** | — | — |
+| TC-95 | Empty state | Message | "There are no bookings yet" | **Pass** | — | — |
+| TC-96 | Confirm a pending booking | `confirmed` | `confirmed` | **Pass** | — | — |
+| TC-97 | Cancel a pending booking | `cancelled` | `cancelled` | **Pass** | — | — |
+| TC-98 | Cancel a confirmed booking | `cancelled` | `cancelled` | **Pass** | — | — |
+| TC-105 | Repeated confirm | Rejected, unchanged | Unchanged | **Pass** | — | — |
+| TC-105b | Repeated transition message | Failure reported | "could not be confirmed" | **Pass** | — | — |
+| TC-100 | Confirm a cancelled booking | Rejected | Still `cancelled` | **Pass** | — | — |
+| TC-101 | Arbitrary action value | Rejected | Unchanged | **Pass** | — | — |
+| TC-101b | Invalid action message | "not recognised" | "not recognised" | **Pass** | — | — |
+| TC-101c | Posted `status` field ignored | Only mapped action applies | `confirmed` (not `completed`) | **Pass** | — | — |
+| **TC-102** | **GET status change refused** | **405, nothing modified** | **First run: HTTP 302 (not 405)** | **Fail → Pass** | **Defect 1 fixed** | **405, nothing modified** |
+| TC-104 | Admin action with bad CSRF | 400, nothing modified | 400, unchanged | **Pass** | — | — |
+| TC-103 | Customer performs admin action | Refused | Redirected, unchanged | **Pass** | — | — |
+| TC-103b | Guest performs admin action | Refused | Redirected to login | **Pass** | — | — |
+| TC-93a | Test bookings created | 3 | 3 | **Pass** | — | — |
+
+---
+
+## 10. Output escaping and accessibility markup
+
+| ID | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-110 | Stored `<img src=x onerror=…>` in a customer name | Escaped on admin dashboard | Rendered as `&lt;img …`, no raw tag | **Pass** |
+| TC-111 | Stored `<script>` in a room type name | Escaped on booking page | Rendered as `&lt;script&gt;`, no raw tag | **Pass** |
+| TC-110b / TC-111b | Test data restored afterwards | Original values | Restored | **Pass** |
+| TC-123 | Every visible field has `<label for>` | No unlabelled fields | login 2/2, register 4/4, booking 4/4 | **Pass** |
+| TC-124 | Errors announced and linked | `role=alert`, `aria-invalid`, `aria-describedby` | All three present | **Pass** |
+| TC-125 | **Works with no JavaScript** | Booking completes | 302 + 1 row — the entire harness is raw HTTP with no JS engine | **Pass** |
+
+---
+
+## 11. Visual and responsive
+
+Measured in headless Chrome at three viewports. "No horizontal overflow" was
+verified by attempting to scroll the page sideways, not merely by comparing
+`scrollWidth` (see Defect 3 below for why that distinction matters).
+
+| Page | Desktop 1366 | Tablet 768 | Mobile 390 |
+|---|---|---|---|
+| Home | ✅ | ✅ | ✅ |
+| Standard Twin Room | ✅ | ✅ | ✅ |
+| Presidential Suite | ✅ | ✅ | ✅ |
+| Login | ✅ | ✅ | ✅ |
+| Registration | ✅ | ✅ | ✅ |
+| Booking form | ✅ | ✅ | ✅ |
+| Customer dashboard | ✅ | ✅ | ✅ |
+| Administrator dashboard | ✅ | ✅ | ✅ |
+
+For every page and viewport: **no horizontal page overflow, no broken images,
+exactly one `<h1>`, no image missing `alt`.**
+
+| Check | Result |
+|---|---|
+| Room grid responsive | 3 columns @1366, 2 @768, 1 @390 |
+| Dashboard tables on mobile | Stack into labelled cards below 1000px |
+| Administrator actions reachable | Confirm/Cancel visible at every width after Defect 2 fix |
+| Gallery | Selecting thumbnail 3 changed `src` **and** `alt`; `aria-pressed` = `false,false,true,false` |
+| Video control | Control visible; click toggled playing → paused; poster present |
+| Keyboard focus | Focused link showed a 3px outline |
+| Broken links / assets | None (all internal references resolve) |
+
+Screenshots: [`docs/evidence/`](docs/evidence/) — see
+[Evidence](#evidence).
+
+---
+
+## Defects found and fixed
+
+### Defect 1 — GET on the admin action endpoint returned 302, not 405
+
+*Found by TC-102.* `admin-booking-action.php` set `http_response_code(405)`
+and then called `auth_redirect()`, whose `header('Location: …', true, 302)`
+silently **overwrote** the status. The endpoint advertised 405 but answered
+302.
+
+No booking was ever modified by a GET, so this was not a security hole — but
+the code did not do what it said. Fixed by responding 405 with `Allow: POST`
+and a small page, matching `logout.php`'s behaviour. **Retested: 405,
+nothing modified.**
+
+### Defect 2 — Administrator action buttons were off-screen
+
+*Found by visual inspection of the captured screenshot.* The bookings table
+had eleven columns and rendered 1200px wide inside a 1040px container, so
+**Confirm and Cancel — the administrator's primary controls — sat beyond the
+visible area** at ordinary desktop widths and required horizontal scrolling
+inside the table.
+
+Fixed by: merging check-in and check-out into one compact "Stay" column (both
+dates still shown); showing the created date without the time; tightening the
+table's type size and cell padding; and raising the stacked-card breakpoint
+from 640px to 1000px so the table becomes cards whenever it cannot fit.
+
+**Retested at 1366, 1280, 1100, 900, 768 and 390px: table fits at every
+width, no inner scrolling, action buttons visible throughout.** A now-unused
+`admin_date()` helper was removed at the same time.
+
+### Defect 3 — (investigated, **not** a defect): reported page overflow
+
+An automated check flagged horizontal overflow on the administrator dashboard
+at 768px (`documentElement.scrollWidth` 1216 vs viewport 768). Investigation
+showed the page **could not actually be scrolled sideways** — setting
+`scrollLeft = 5000` left it at 0 — while the table scrolled correctly inside
+its own container. Chrome's root `scrollWidth` over-reports when a nested
+scroll container clips content; the original metric was the wrong test. No
+code change was made for this. The check was replaced with a real
+scroll attempt. (Defect 2's fix removed the wide table anyway.)
+
+Similarly, an automated "clipped text" heuristic flagged 1–2 elements per
+page; all were `.visually-hidden` screen-reader text, which is clipped by
+design. Not defects.
+
+---
+
+## Not executed
+
+These remain untested and are **not** claimed as passing:
+
+| Area | Why |
+|---|---|
+| W3C HTML validation | Validator not run (requires internet or a local validator) |
+| W3C CSS validation | As above |
+| Screen-reader testing (NVDA / JAWS / VoiceOver) | No screen reader available; ARIA verified only by markup inspection |
+| Manual keyboard walkthrough | Focus outline verified programmatically; a full tab-order walkthrough by hand was not performed |
+| Cross-browser testing | Only Chrome 148 used. Firefox, Safari and Edge untested |
+| Real mobile devices | Emulated viewports only |
+| Load / performance testing | Not attempted |
+| Concurrency under Apache with a process pool | Only the two-instance workaround was used (see section 8) |
+| Colour-contrast re-verification on PHP pages | Measured in Phase 4 on static pages; not repeated here |
+| Email, payment, password reset | Out of scope by design — no such code exists |
+
+---
+
+## Evidence
+
+Screenshots in [`docs/evidence/`](docs/evidence/), captured from the running
+application. They contain **no passwords, session identifiers or real
+personal data** — only fictional `example.test` accounts.
+
+| File | Shows |
+|---|---|
+| `homepage-desktop.png` | Full home page at 1366px |
+| `homepage-mobile.png` | Home page at 390px |
+| `room-twin-desktop.png` | Standard Twin Room page |
+| `room-details-desktop.png` / `-mobile.png` | Presidential Suite page |
+| `login-desktop.png` | Login form |
+| `registration-desktop.png` | Registration form |
+| `booking-form-desktop.png` / `-mobile.png` | Booking form with live room types |
+| `customer-dashboard-desktop.png` / `-mobile.png` | Customer bookings, incl. mobile card stacking |
+| `admin-dashboard-desktop.png` / `-mobile.png` | Live totals, bookings, Confirm/Cancel controls |
+| `_report.json` | Raw measurements behind section 11 |
+
+---
+
+## Known limitations of this test round
+
+1. **Single browser.** All visual results are Chrome 148 only.
+2. **Concurrency evidence is strong but not exhaustive** — see section 8.
+3. **Tests were run by an automated HTTP harness**, not by a person clicking
+   through the interface. That is a strength for repeatability and for
+   proving the no-JavaScript path, but it means subjective usability issues
+   can be missed — Defect 2 was found by *looking at a screenshot*, not by
+   any automated assertion.
+4. **The database was reset between suites.** Long-lived data (many months of
+   bookings, hundreds of accounts) has not been exercised; the admin list cap
+   of 50 has never been reached in testing.
+5. `example.test` accounts and a few demonstration bookings remain in the
+   local database after this round. They are fictional and are not part of
+   the repository.

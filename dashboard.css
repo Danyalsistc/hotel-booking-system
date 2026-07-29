@@ -107,15 +107,20 @@
     border-radius: var(--radius-md);
 }
 
+/* Both dashboard tables carry ten columns. The type size and cell padding are
+   kept tight so the full table - including the administrator's Confirm and
+   Cancel controls in the last column - fits without horizontal scrolling at
+   normal desktop widths. Below 1000px the table stops fitting at all, and the
+   stacked card layout further down takes over. */
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
 }
 
 .data-table th,
 .data-table td {
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-3);
     text-align: left;
     vertical-align: middle;
     border-bottom: 1px solid var(--color-border);
@@ -223,13 +228,18 @@
     .cards {
         grid-template-columns: 1fr;
     }
+}
+
+/* Below 1000px a ten-column booking table cannot fit, and horizontally
+   scrolling to reach the action buttons is a poor experience - so the table
+   becomes cards from here down, not just on phones. */
+@media (max-width: 1000px) {
 
     /* Stacked tables.
 
        Each row becomes a small card and every cell is prefixed with its column
-       heading, taken from the data-label attribute in the markup. This keeps an
-       eleven-column booking table readable on a phone without horizontal
-       scrolling. */
+       heading, taken from the data-label attribute in the markup. This keeps a
+       ten-column booking table readable without horizontal scrolling. */
     .data-table thead {
         position: absolute;
         width: 1px;
