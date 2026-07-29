@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    background:
+    linear-gradient(
+        rgba(0,0,0,0.55),
+        rgba(0,0,0,0.55)
+    ),
+    url('images/home_bg.jpg');
+
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+}
+
+.container{
+    width:420px;
+}
+
+form{
+    width:100%;
+    padding:45px;
+
+    background:rgba(255,255,255,0.12);
+    backdrop-filter:blur(15px);
+    -webkit-backdrop-filter:blur(15px);
+
+    border:1px solid rgba(255,255,255,0.2);
+    border-radius:20px;
+
+    box-shadow:
+    0 8px 32px rgba(0,0,0,0.3);
+
+    text-align:center;
+}
+
+h2{
+    color:#fff;
+    font-size:32px;
+    font-weight:600;
+    margin-bottom:30px;
+}
+
+input{
+    width:100%;
+    padding:15px 20px;
+    margin-bottom:18px;
+
+    border:none;
+    outline:none;
+
+    background:rgba(255,255,255,0.15);
+    border:1px solid rgba(255,255,255,0.2);
+
+    border-radius:12px;
+
+    color:#fff;
+    font-size:15px;
+}
+
+input::placeholder{
+    color:rgba(255,255,255,0.8);
+}
+
+input:focus{
+    border:1px solid #3f22ff;
+    box-shadow:0 0 15px rgba(212,175,55,0.4);
+}
+
+button{
+    width:100%;
+    padding:15px;
+
+    border:none;
+    border-radius:12px;
+
+    background:#3f22ff;
+    color:#111;
+
+    font-size:17px;
+    font-weight:600;
+
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    background:#3f22ff;
+    transform:translateY(-2px);
+}
+
+p{
+    margin-top:20px;
+    color:white;
+    font-size:14px;
+}
+
+a{
+    color:#3f22ff;
+    text-decoration:none;
+    font-weight:600;
+}
+
+a:hover{
+    text-decoration:underline;
+}
+
+.logo{
+    color:#3f22ff;
+    font-size:18px;
+    font-weight:700;
+    margin-bottom:10px;
+    letter-spacing:2px;
+}
+
+@media(max-width:480px){
+
+    .container{
+        width:90%;
+    }
+
+    form{
+        padding:30px;
+    }
+
+}

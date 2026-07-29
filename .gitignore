@@ -1,0 +1,108 @@
+# ---------------------------------------------------------------------------
+# Hotel Booking System - .gitignore
+# ICT304 Capstone 2
+#
+# NOTE ON WHAT IS DELIBERATELY *NOT* IGNORED:
+#   The website source (.html/.css/.js/.php), images/, video/, database.sql
+#   and all documentation (README.md, docs/) are assessable deliverables and
+#   MUST stay under version control. Do not add them here.
+# ---------------------------------------------------------------------------
+
+# --- Environment files & secrets -------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+
+# --- Local configuration overrides -----------------------------------------
+# config.php itself IS tracked: it contains only XAMPP defaults and reads real
+# values from environment variables. Machine-specific overrides go in these
+# files instead, and are never committed.
+config.local.php
+config.local.*
+*.local.php
+local-config.php
+local.settings.php
+
+# --- Database credential files ---------------------------------------------
+credentials.php
+db-credentials.php
+db_credentials.php
+secrets.php
+secrets.json
+*.credentials
+*.secret
+*.key
+*.pem
+
+# --- Database dumps & local data -------------------------------------------
+# database.sql is the assessable schema and IS tracked.
+# These are throwaway local dumps/backups only.
+*.sql.gz
+*.sql.zip
+*-backup.sql
+*_backup.sql
+dump.sql
+backup/
+
+# --- IDE & editor files ----------------------------------------------------
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+.project
+.buildpath
+.settings/
+nbproject/
+*.code-workspace
+
+# --- Operating system files ------------------------------------------------
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+# macOS
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+# Linux
+*~
+.directory
+.fuse_hidden*
+.nfs*
+
+# --- Temporary files -------------------------------------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
+*.cache
+tmp/
+temp/
+.cache/
+
+# --- Log files -------------------------------------------------------------
+*.log
+logs/
+error_log
+php_error.log
+php_errors.log
+access.log
+
+# --- Dependency directories (not currently used; guard for later) -----------
+vendor/
+node_modules/
+composer.phar

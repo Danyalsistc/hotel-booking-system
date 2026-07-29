@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Booking</title>
+    <link rel="stylesheet" href="index.css"> <!-- Link to your CSS file -->
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <ul class="nav-links">
+                <li>
+                    <a href="#">Home</a>
+                </li>
+                <li>
+                    <a href="#rooms">Rooms</a>
+                </li>
+                <li>
+                    <a href="booknow.html">Book Now</a>
+                </li>
+                <li>
+                    <a href="admin-dashboard.html">Admin Panel</a>
+                </li>
+                <li><a href="login.html">Login</a></li>
+<li><a href="register.html">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+
+<!-- Play Video Banner Section -->
+<div class="video-banner">
+    <video id="video-banner" src="video/video.mp4" autoplay muted loop class="banner-video"></video>
+    <div class="video-overlay">
+        <h1>Welcome to your Luxary Stay ! </h1>
+        <!-- Tap Button at Bottom Right -->
+        <div class="tap-button" onclick="scrollToRooms()">Tap</div>
+    
+</div>
+
+
+    <!-- Rooms Section -->
+    <section id="rooms" class="rooms">
+    
+  
+        <div class="room">
+            <img src="images/DeluxeSuite/5.webp" alt="Deluxe Suite" class="room-image">
+            <div class="room-info">
+                <h3>Deluxe Suite</h3>
+                <a href="DeluxeSuite.html" class="go-link">Go</a>
+            </div>
+        </div>
+    
+        <div class="room">
+            <img src="images/ExecutiveSuite/5.webp" alt="Executive Suite" class="room-image">
+            <div class="room-info">
+                <h3>Executive Suite</h3>
+                <a href="ExecutiveSuite.html" class="go-link">Go</a>
+            </div>
+        </div>
+    
+        <div class="room">
+            <img src="images/ExecutiveTwinRoom/6.jpg" alt="Executive Twin Room" class="room-image">
+            <div class="room-info">
+                <h3>Executive Twin Room</h3>
+                <a href="ExecutiveTwinRoom.html" class="go-link">Go</a>
+            </div>
+        </div>
+    
+        <div class="room">
+            <img src="images/PresidentialSuiteRoom/5.webp" alt="Presidential Suite" class="room-image">
+            <div class="room-info">
+                <h3>Presidential Suite</h3>
+                <a href="PresidentialSuite.html" class="go-link">Go</a>
+            </div>
+        </div>
+    
+        <div class="room">
+            <img src="images/StandardTwinRoom/2.jpg" alt="Standard Twin Room" class="room-image">
+            <div class="room-info">
+                <h3>Standard Twin Room</h3>
+                <a href="StandardTwinRoom.html" class="go-link">Go</a>
+            </div>
+        </div>
+    
+        <div class="room">
+            <img src="images/SuperiorSuite/8.webp" alt="Superior Suite" class="room-image">
+            <div class="room-info">
+                <h3>Superior Suite</h3>
+                <a href="SuperiorSuite.html" class="go-link">Go</a>
+            </div>
+        </div>
+    
+    </section>
+
+    <!-- About Us Section -->
+    <section id="about-us" class="about-us">
+        <h2>About Us</h2>
+        <p>Online hotel reservations are a popular method for booking hotel rooms. Travelers can book rooms on a computer by using online security to protect their privacy and financial information and by using several online travel agents to compare prices and facilities at different hotels.</p>
+        <p>Prior to the Internet, travelers could write, telephone the hotel directly, or use a travel agent to make a reservation. Nowadays, online travel agents have pictures of hotels and rooms, information on prices and deals, and even information on local resorts.</p>
+        <p>Online hotel reservations are also helpful for making last-minute travel arrangements. Hotels may drop the price of a room if some rooms are still available. There are several websites that specialize in searches for deals on rooms.</p>
+    </section>
+
+
+
+    <footer>
+        <div class="footer-content">
+            
+            <div class="contact-footer">
+                <p><strong>Call Hotline:</strong> +0928 8460 1897</p>
+                <p><strong>Email Us:</strong> <a href="mailto:group@gmail.com">dewthilinakuruneru@gmail.com</a></p>
+                <p><strong>Visit Us:</strong> 123 Example Street, Apt 4BSpringfield, IL 62701</p>
+            </div>
+            <p>&copy; 2025 Hotel Booking System. All Rights Reserved.</p>
+        </div>
+    </footer>
+    
+
+    <script>
+        function scrollToRooms() {
+            // Get the "rooms" section by its ID
+            const targetSection = document.getElementById("rooms");
+            
+            // Scroll smoothly to the "rooms" section
+            targetSection.scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+          
+    </script>
+
+</body>
+
+</html>
