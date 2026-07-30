@@ -5,12 +5,14 @@
 > ## Status: EXECUTED
 >
 > The tests below were **actually run** against a live installation on
-> 30 July 2026. Every "Actual result" is an observed outcome, not a
-> prediction. Tests that were **not** run are listed explicitly in
-> [Not executed](#not-executed) and are not marked as passing.
+> 30 July 2026, and extended on 30 July 2026 with the regression suite in
+> [section 12](#12-customer-dashboard-status-guidance-regression). Every
+> "Actual result" is an observed outcome, not a prediction. Tests that were
+> **not** run are listed explicitly in [Not executed](#not-executed) and are
+> not marked as passing.
 >
-> **Result: 130 application checks executed — 130 passed, 0 application
-> failures** (after the two defects in
+> **Result: 152 application checks executed — 152 passed, 0 application
+> failures** (after the three defects in
 > [Defects found and fixed](#defects-found-and-fixed) were repaired and every
 > suite re-run).
 >
@@ -18,10 +20,10 @@
 > application test.** It records that PHP's built-in development server is
 > single-threaded on Windows. It is deliberately reported as a limitation of
 > the test environment, is **not** an application defect, and is **not**
-> counted among the 130 application checks — neither as a pass nor as a
+> counted among the 152 application checks — neither as a pass nor as a
 > failure. See [section 8](#8-concurrency).
 >
-> Alongside the 130 application checks, this round also covered 11 PHP files
+> Alongside the 152 application checks, this round also covered 11 PHP files
 > by syntax lint and 24 page-and-viewport combinations by visual measurement;
 > those are reported in their own sections rather than folded into the count.
 
@@ -91,21 +93,22 @@ Each row below counts the individual result rows in that section's table.
 | 8. Concurrency (application checks only) | 3 | 3 | 0 |
 | 9. Administrator | 22 | 22 | 0 |
 | 10. Escaping and accessibility markup | 5 | 5 | 0 |
-| **Total** | **131 rows / 130 distinct** | **130** | **0** |
+| 12. Customer dashboard status guidance (regression) | 22 | 22 | 0 |
+| **Total** | **153 rows / 152 distinct** | **152** | **0** |
 
-**How the total reconciles.** The result tables in sections 2–10 contain
-**132 rows** in all. Of those:
+**How the total reconciles.** The result tables in sections 2–10 and 12
+contain **154 rows** in all. Of those:
 
 - **1 row is the environment-capability check** TC-71-env, which is not an
-  application test and is excluded (see the next table). That leaves **131
+  application test and is excluded (see the next table). That leaves **153
   application rows**, which is what the Checks column above sums to.
 - **1 application test is listed twice.** TC-103b (a guest attempting an
   administrator action) appears under both *Access control* and
   *Administrator* because it is relevant to both. It is one test and is
   counted **once**.
 
-So: 132 rows − 1 environment check − 1 repeated listing =
-**130 distinct application checks, 130 passed, 0 failed.**
+So: 154 rows − 1 environment check − 1 repeated listing =
+**152 distinct application checks, 152 passed, 0 failed.**
 
 A separate defect in the numbering was corrected at the same time: **TC-06b**
 had been used for two *different* tests. The booking-page one has been
@@ -118,7 +121,7 @@ renumbered **TC-06c**, so every test now has a unique identifier.
 | TC-71-env | Can PHP's built-in development server serve concurrent requests? | **No — single-threaded on Windows.** Environment limitation, **not an application defect** |
 
 This check measures the *test environment*, not the application. It is
-excluded from the 130 application checks above and is not reported as either
+excluded from the 152 application checks above and is not reported as either
 an application pass or an application failure. It is retained because it is
 what justifies the two-server workaround described in
 [section 8](#8-concurrency).
@@ -131,7 +134,7 @@ what justifies the two-server workaround described in
 | 11. Visual / responsive measurement | 8 pages × 3 viewports = 24 | 24 clean |
 
 These are verification activities rather than pass/fail application test
-cases, so they are reported separately and are not added to the 130.
+cases, so they are reported separately and are not added to the 152.
 
 ---
 
@@ -428,6 +431,69 @@ Screenshots: [`docs/evidence/`](docs/evidence/) — see
 
 ---
 
+## 12. Customer dashboard status guidance (regression)
+
+Added after **Defect 4** (below) was found by manual browser testing. These
+checks drive the real page over HTTP through Apache at
+<http://localhost/hotel-booking-system/>, seeding a dedicated fictional
+customer's bookings with each status combination and asserting the guidance
+sentence that the page renders beneath the bookings table.
+
+The test customer and all of its bookings are removed again at the end of the
+run.
+
+| ID | Test | Expected | Actual | Result |
+|---|---|---|---|---|
+| TC-130 | One pending booking | Described as awaiting staff confirmation | "One booking is pending: it has been received and is waiting for our staff to confirm it." | **Pass** |
+| TC-130b | Singular wording for one booking | No plural phrasing | No "bookings are pending" | **Pass** |
+| TC-130c | Contact instruction retained | Present | "To change or cancel a booking, please contact the hotel." | **Pass** |
+| TC-131 | Three pending bookings | Plural wording | "3 bookings are pending: they have been received and are waiting for our staff to confirm them." | **Pass** |
+| TC-132 | One confirmed booking | Described as approved/confirmed | "One booking is confirmed: it has been approved by our staff." | **Pass** |
+| TC-132b | Confirmed booking never called pending | Word "pending" absent | Absent | **Pass** |
+| TC-132c | Two confirmed bookings | Plural wording | "2 bookings are confirmed: they have been approved by our staff." | **Pass** |
+| TC-133 | One cancelled booking | Described as cancelled | "One booking has been cancelled and no longer holds a room." | **Pass** |
+| TC-133b | Cancelled booking never called pending | Word "pending" absent | Absent | **Pass** |
+| TC-133c | Two cancelled bookings | Plural wording | "2 bookings have been cancelled and no longer hold a room." | **Pass** |
+| TC-134 | One completed booking | Described as completed | "One booking is completed: that stay has finished." | **Pass** |
+| TC-134b | Completed booking never called pending | Word "pending" absent | Absent | **Pass** |
+| TC-134c | Two completed bookings | Plural wording | "2 bookings are completed: those stays have finished." | **Pass** |
+| TC-135 | Mixed list — pending clause | Present, plural (2) | "2 bookings are pending…" | **Pass** |
+| TC-135b | Mixed list — confirmed clause | Present, singular (1) | "One booking is confirmed…" | **Pass** |
+| TC-135c | Mixed list — cancelled clause | Present, singular (1) | "One booking has been cancelled…" | **Pass** |
+| TC-135d | Mixed list — completed clause | Present, plural (3) | "3 bookings are completed…" | **Pass** |
+| TC-135e | Mixed list — contact instruction | Present | Present | **Pass** |
+| TC-135f | Mixed list — table intact | All 7 bookings listed | 7 rows | **Pass** |
+| TC-136 | Empty dashboard preserved | "You have no bookings yet" | Shown | **Pass** |
+| TC-136b | No guidance when list is empty | No guidance paragraph | None rendered | **Pass** |
+| TC-137 | Old hard-coded sentence gone | Absent for a confirmed-only list | Absent | **Pass** |
+
+**22 checks, 22 passed, 0 failed.**
+
+### Rendered output captured from the running page
+
+```
+pending x1    : One booking is pending: it has been received and is waiting for our staff
+                to confirm it. To change or cancel a booking, please contact the hotel.
+pending x3    : 3 bookings are pending: they have been received and are waiting for our
+                staff to confirm them. To change or cancel a booking, please contact the hotel.
+confirmed x1  : One booking is confirmed: it has been approved by our staff. To change or
+                cancel a booking, please contact the hotel.
+confirmed x2  : 2 bookings are confirmed: they have been approved by our staff. To change
+                or cancel a booking, please contact the hotel.
+cancelled x1  : One booking has been cancelled and no longer holds a room. To change or
+                cancel a booking, please contact the hotel.
+completed x1  : One booking is completed: that stay has finished. To change or cancel a
+                booking, please contact the hotel.
+mixed 2/1/1/3 : 2 bookings are pending: they have been received and are waiting for our
+                staff to confirm them. One booking is confirmed: it has been approved by
+                our staff. One booking has been cancelled and no longer holds a room.
+                3 bookings are completed: those stays have finished. To change or cancel a
+                booking, please contact the hotel.
+no bookings   : (no guidance paragraph — empty state shown instead)
+```
+
+---
+
 ## Defects found and fixed
 
 ### Defect 1 — GET on the admin action endpoint returned 302, not 405
@@ -473,6 +539,46 @@ scroll attempt. (Defect 2's fix removed the wide table anyway.)
 Similarly, an automated "clipped text" heuristic flagged 1–2 elements per
 page; all were `.visually-hidden` screen-reader text, which is clipped by
 design. Not defects.
+
+### Defect 4 — customer dashboard guidance contradicted the status badge
+
+**Found by manual browser testing, not by any automated check.** A booking
+displaying a green **Confirmed** badge was still accompanied by the guidance:
+
+> "A **pending** booking has been received and is waiting for our staff to
+> confirm it. To change or cancel a booking, please contact the hotel."
+
+That sentence was hard-coded in `customer-dashboard.php` and printed for every
+non-empty booking list, so it contradicted the Confirmed, Cancelled and
+Completed badges shown in the very same table. A customer whose booking had
+been cancelled was told it was awaiting confirmation.
+
+No data was wrong — only the explanatory text. The badge, the stored status
+and every calculation were correct throughout.
+
+**Fixed** by deriving the guidance from the statuses actually present in the
+signed-in customer's own list. A new `dash_status_guidance()` helper counts
+each status and emits one clause per status that is genuinely present, with
+correct singular/plural agreement, so a mixed list reads correctly. Pending
+bookings are described as awaiting staff confirmation; confirmed bookings as
+approved; cancelled and completed bookings are never described as pending.
+The contact-the-hotel instruction and the empty-dashboard state are unchanged,
+and every sentence is escaped on output.
+
+No SQL, authentication, booking calculation, administrator action, schema or
+CSS was touched — the change is confined to presentation logic in
+`customer-dashboard.php`.
+
+**Retested:** 22 new checks in
+[section 12](#12-customer-dashboard-status-guidance-regression) covering every
+single status, both singular and plural, the mixed case and the empty state.
+All pass.
+
+**Why the automated suite missed it.** Phase 5's dashboard tests asserted that
+the *booking data* appeared correctly — reference, dates, amounts, status
+badge — but never asserted anything about the surrounding explanatory prose.
+This is the second defect in this project found by a person looking at a page
+rather than by an assertion (Defect 2 was the first).
 
 ---
 
@@ -520,11 +626,14 @@ personal data** — only fictional `example.test` accounts.
 
 1. **Single browser.** All visual results are Chrome 148 only.
 2. **Concurrency evidence is strong but not exhaustive** — see section 8.
-3. **Tests were run by an automated HTTP harness**, not by a person clicking
-   through the interface. That is a strength for repeatability and for
-   proving the no-JavaScript path, but it means subjective usability issues
-   can be missed — Defect 2 was found by *looking at a screenshot*, not by
-   any automated assertion.
+3. **Most tests were run by an automated HTTP harness**, not by a person
+   clicking through the interface. That is a strength for repeatability and
+   for proving the no-JavaScript path, but it means presentation and wording
+   problems can be missed. **Two of the three real defects were found by a
+   person looking at the page, not by any assertion** — Defect 2 from a
+   screenshot, and Defect 4 from manual browser testing. The assertions
+   checked that the *data* was right and never checked what the surrounding
+   text claimed about it.
 4. **The database was reset between suites.** Long-lived data (many months of
    bookings, hundreds of accounts) has not been exercised; the admin list cap
    of 50 has never been reached in testing.

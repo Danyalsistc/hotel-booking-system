@@ -453,7 +453,7 @@ This project is mid-rebuild. Honest status of each area:
 | Login (`login.php`) | ✅ Rebuilt — prepared statements, `password_verify`, generic errors, CSRF |
 | Sessions and roles | ✅ Hardened — HttpOnly, SameSite=Lax, strict mode, ID regenerated at login |
 | Logout (`logout.php`) | ✅ POST + CSRF only |
-| Runtime testing | ✅ Executed — 130 distinct application checks, all passed, zero application failures (see `TESTING.md`) |
+| Runtime testing | ✅ Executed — 152 distinct application checks, all passed, zero application failures (see `TESTING.md`) |
 | Bookings (`booknow.php`) | ✅ Stored in MySQL, check-in **and** check-out, server-calculated price |
 | Availability | ✅ Calculated against physical rooms and overlapping bookings, inside a locking transaction |
 | Customer dashboard | ✅ Lists the signed-in customer's own bookings from MySQL |
@@ -470,24 +470,24 @@ The system **has now been executed and tested end to end** on
 30 July 2026 against PHP 8.2.12 and MariaDB 10.4.32, served by PHP's
 built-in development server at <http://127.0.0.1:8080/>.
 
-**130 distinct application checks were executed: 130 passed, zero application
+**152 distinct application checks were executed: 152 passed, zero application
 failures.** Most were run by an automated HTTP harness, but not all — the
 database import, row counts and constraint checks were carried out by hand
-with the MySQL client, so these are not 130 *automated* checks. Together they
+with the MySQL client, so these are not 152 *automated* checks. Together they
 cover the database import and constraints, registration, login, sessions,
 CSRF, access control, booking creation and validation, the availability
 overlap rules, a genuine concurrent-booking race, the administrator actions,
-and output escaping.
+output escaping, and the customer dashboard's status guidance.
 
 **One separate environment-capability check** established that PHP's built-in
 development server is **single-threaded on Windows**, so a race against a
 single instance cannot be tested. That is a limitation of the test
-environment, **not an application defect**. It is excluded from the 130
+environment, **not an application defect**. It is excluded from the 152
 application checks and is counted neither as a pass nor as a failure. It is
 also what justified running a second server instance to produce a genuine
 concurrent booking race.
 
-Reported separately again, and likewise not folded into the 130: 11 PHP files
+Reported separately again, and likewise not folded into the 152: 11 PHP files
 passed syntax lint, and 24 page-and-viewport combinations were measured for
 responsive layout.
 

@@ -92,6 +92,68 @@ function dash_datetime(string $value): string
     return $date === false ? $value : $date->format('j M Y, g:ia');
 }
 
+/**
+ * Build the guidance shown beneath the bookings table, from the statuses that
+ * are actually present in this customer's list.
+ *
+ * This replaces a hard-coded sentence that always described bookings as
+ * pending and awaiting staff confirmation, which contradicted the Confirmed,
+ * Cancelled and Completed badges shown in the very same table.
+ *
+ * One clause is produced per status that is genuinely present, with correct
+ * singular/plural agreement, so a mixed list reads correctly too. Cancelled
+ * and completed bookings are never described as pending.
+ *
+ * @param  array<int, array{status: string}> $bookings
+ * @return array<int, string> Plain-text sentences; the caller escapes them.
+ */
+function dash_status_guidance(array $bookings): array
+{
+    $counts = ['pending' => 0, 'confirmed' => 0, 'cancelled' => 0, 'completed' => 0];
+
+    foreach ($bookings as $booking) {
+        $status = (string) ($booking['status'] ?? '');
+
+        if (array_key_exists($status, $counts)) {
+            $counts[$status]++;
+        }
+    }
+
+    // [singular clause, plural clause] for each status.
+    $wording = [
+        'pending' => [
+            'One booking is pending: it has been received and is waiting for our staff to confirm it.',
+            '%d bookings are pending: they have been received and are waiting for our staff to confirm them.',
+        ],
+        'confirmed' => [
+            'One booking is confirmed: it has been approved by our staff.',
+            '%d bookings are confirmed: they have been approved by our staff.',
+        ],
+        'cancelled' => [
+            'One booking has been cancelled and no longer holds a room.',
+            '%d bookings have been cancelled and no longer hold a room.',
+        ],
+        'completed' => [
+            'One booking is completed: that stay has finished.',
+            '%d bookings are completed: those stays have finished.',
+        ],
+    ];
+
+    $sentences = [];
+
+    foreach ($counts as $status => $count) {
+        if ($count === 0) {
+            continue;
+        }
+
+        $sentences[] = $count === 1
+            ? $wording[$status][0]
+            : sprintf($wording[$status][1], $count);
+    }
+
+    return $sentences;
+}
+
 $flash = flash_render();
 ?>
 <!DOCTYPE html>
@@ -210,10 +272,12 @@ $flash = flash_render();
                 </table>
             </div>
 
+            <?php /* Guidance derived from the statuses actually present above. */ ?>
             <p class="field-hint">
-                A <strong>pending</strong> booking has been received and is
-                waiting for our staff to confirm it. To change or cancel a
-                booking, please contact the hotel.
+                <?php foreach (dash_status_guidance($bookings) as $sentence): ?>
+                    <?php echo e($sentence); ?>
+                <?php endforeach; ?>
+                To change or cancel a booking, please contact the hotel.
             </p>
 
         <?php endif; ?>
