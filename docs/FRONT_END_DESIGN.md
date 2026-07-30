@@ -218,7 +218,7 @@ footer and button rows. No float-based layout remains.
 | Status badge | `theme.css` | Four booking statuses |
 | Room card | `index.css` | Image, name, capacity, price, action |
 | Step list | `index.css` | The four-stage "how booking works" explainer |
-| Hero | `index.css` | Video, scrim, headline, actions, video control |
+| Hero | `index.css` | Static background image, gradient scrim, headline, actions |
 | Gallery | `room.css` | Main image plus four thumbnail buttons |
 | Room summary | `room.css` | Price, facts, facility chips, actions; sticky on desktop |
 | Auth card | `css.css` | Centred card on a photographic background |
@@ -287,7 +287,7 @@ availability are calculated on the server at submission.
 | Alt text | Specific per image and per view; decorative thumbnail images use `alt=""` with a visually hidden button label |
 | Lazy loading | On room-grid and thumbnail images; the hero is not lazy-loaded |
 | Pointer targets | Buttons and nav links at least 44px tall |
-| Reduced motion | Honoured globally; the hero video does not autoplay for those users |
+| Reduced motion | Honoured globally. The hero is a static image, so nothing moves there at all |
 | Tables | `<caption>`, `<thead>`, `scope="col"`; stacked cards on mobile keep column names via `data-label` |
 | Language | `lang="en-AU"` on every page |
 
@@ -300,9 +300,8 @@ administrator table shows all eleven columns at once for scanning.
 **Mobile.** The eleven-column booking table would be unusable, so below 640px
 each row becomes a card and every value is prefixed with its column name from
 `data-label`. The hero shortens so the room grid is reachable without a long
-scroll. The hero video control moves out of the corner to avoid overlapping
-the call-to-action buttons. Fixed background attachment is released, because
-it is expensive and can jitter on mobile browsers.
+scroll. Fixed background attachment is released, because it is expensive and
+can jitter on mobile browsers.
 
 ## 14. Tools and technologies
 
@@ -368,6 +367,8 @@ No framework, no preprocessor, no bundler, no package manager, no CDN.
 9. **No mobile navigation menu.** Links wrap onto multiple lines on small
    screens rather than collapsing into a toggle. Acceptable at five items, but
    it would not scale.
-10. **The home page hero video is decorative** and carries no captions,
-    because it has no audio and conveys no information. If it were ever
-    replaced with meaningful footage, captions would be required.
+10. **The home page hero image is decorative.** It is applied as a CSS
+    background rather than an `<img>`, so it is correctly absent from the
+    accessibility tree and needs no alternative text. It replaced a background
+    video that rendered blurry and played back with visible lag; removing it
+    also removed a 4.7 MB download from the first page a visitor sees.

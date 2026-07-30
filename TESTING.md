@@ -12,7 +12,7 @@
 > not marked as passing.
 >
 > **Result: 152 application checks executed — 152 passed, 0 application
-> failures** (after the three defects in
+> failures** (after the four defects in
 > [Defects found and fixed](#defects-found-and-fixed) were repaired and every
 > suite re-run).
 >
@@ -422,12 +422,14 @@ exactly one `<h1>`, no image missing `alt`.**
 | Dashboard tables on mobile | Stack into labelled cards below 1000px |
 | Administrator actions reachable | Confirm/Cancel visible at every width after Defect 2 fix |
 | Gallery | Selecting thumbnail 3 changed `src` **and** `alt`; `aria-pressed` = `false,false,true,false` |
-| Video control | Control visible; click toggled playing → paused; poster present |
+| Video control | *No longer applicable* — the hero video was removed and replaced with a static image (see [Defect 5](#defect-5--home-page-hero-video-was-blurry-and-laggy)). This row is retained so the record of what was tested at the time stays honest |
 | Keyboard focus | Focused link showed a 3px outline |
 | Broken links / assets | None (all internal references resolve) |
 
 Screenshots: [`docs/evidence/`](docs/evidence/) — see
-[Evidence](#evidence).
+[Evidence](#evidence). The home page screenshots there were captured while the
+hero still used the video; they show the video's poster frame rather than the
+current static hero image.
 
 ---
 
@@ -580,6 +582,44 @@ badge — but never asserted anything about the surrounding explanatory prose.
 This is the second defect in this project found by a person looking at a page
 rather than by an assertion (Defect 2 was the first).
 
+### Defect 5 — home page hero video was blurry and laggy
+
+**Found by manual browser testing.** The home page hero used a 4.7 MB
+background video, `video/video.mp4`. In use it rendered visibly blurry and
+played back with noticeable lag, which undercut the quality of the page it was
+meant to showcase — and it was the single heaviest asset on the first page a
+visitor sees.
+
+Every automated check had passed: the control toggled correctly, the poster was
+present, reduced motion was honoured, and there was no layout overflow. None of
+that measures whether the video *looked good or played smoothly*, which is why
+only a person watching it could find this.
+
+**Fixed** by replacing the video with a static hero image, `images/home_bg.jpg`
+— already in the project, sharper, and roughly a thirteenth of the size. The
+gradient scrim, heading, description, buttons, dimensions and responsive
+behaviour are all unchanged; only the moving background is gone.
+
+Removed as part of the change:
+
+- the `<video>` element and the Play/Pause control markup in `index.html`
+- the `main.js` script reference, and `main.js` itself, which existed solely to
+  drive that video
+- `video/video.mp4` and the now-empty `video/` directory
+- the `.hero-video` and `.hero-video-controls` rules in `index.css`, including
+  the mobile rule that repositioned the control
+
+`images/home_banner.jpg`, previously the video's poster frame, is now unused.
+It has been kept and moved to the unused-assets section of
+`docs/ASSET_REGISTER.md` rather than deleted.
+
+**Side benefits:** the home page no longer downloads 4.7 MB of video, and the
+hero is now completely static, so there is nothing to pause for visitors who
+ask for reduced motion.
+
+**Note on the deletion.** `video/video.mp4` is removed from the working tree
+but remains in Git history and can be restored if the team ever wants it.
+
 ---
 
 ## Not executed
@@ -628,12 +668,13 @@ personal data** — only fictional `example.test` accounts.
 2. **Concurrency evidence is strong but not exhaustive** — see section 8.
 3. **Most tests were run by an automated HTTP harness**, not by a person
    clicking through the interface. That is a strength for repeatability and
-   for proving the no-JavaScript path, but it means presentation and wording
-   problems can be missed. **Two of the three real defects were found by a
-   person looking at the page, not by any assertion** — Defect 2 from a
-   screenshot, and Defect 4 from manual browser testing. The assertions
-   checked that the *data* was right and never checked what the surrounding
-   text claimed about it.
+   for proving the no-JavaScript path, but it means presentation, wording and
+   perceived-quality problems can be missed. **Three of the four real defects
+   were found by a person looking at the page, not by any assertion** —
+   Defect 2 from a screenshot, and Defects 4 and 5 from manual browser
+   testing. The assertions checked that the *data* was right and that elements
+   *existed*; they never checked what the surrounding text claimed, nor how
+   the page actually looked and performed.
 4. **The database was reset between suites.** Long-lived data (many months of
    bookings, hundreds of accounts) has not been exercised; the admin list cap
    of 50 has never been reached in testing.

@@ -91,8 +91,7 @@ C:\xampp\htdocs\hotel-booking-system\
 ├── README.md
 ├── docs\
 │   └── DATABASE_DESIGN.md
-├── images\
-└── video\
+└── images\
 ```
 
 The folder name you choose becomes part of the URL, so
@@ -570,7 +569,6 @@ written justification. See [`docs/DATABASE_DESIGN.md`](docs/DATABASE_DESIGN.md).
 ├── css.css                 Authentication and simple centred pages
 ├── booknow.css             Booking page
 ├── dashboard.css           Both dashboards
-├── main.js                 Home page hero video control
 ├── booknow.js              Booking form enhancement only (no localStorage)
 ├── room.js                 Room page gallery
 ├── TESTING.md              Executed test cases, results and environment limitations
@@ -581,5 +579,4 @@ written justification. See [`docs/DATABASE_DESIGN.md`](docs/DATABASE_DESIGN.md).
 ├── docs/
 │   └── DATABASE_DESIGN.md  Schema documentation and ER diagram
 ├── images/                 Room photography and site imagery
-└── video/                  Home page banner video
 ```

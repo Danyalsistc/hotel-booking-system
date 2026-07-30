@@ -37,23 +37,12 @@
 
     <!-- ==================================================================
          Hero
-         The poster image and all overlay text sit outside the <video>, so a
-         video that fails to load, or is paused for reduced motion, still
-         leaves a complete and readable hero.
+         A static background image, applied in index.css, with a gradient
+         overlay above it so the white heading and buttons stay readable.
+         Purely decorative, so it is a CSS background rather than an <img>
+         and needs no alternative text.
          ================================================================== -->
     <section class="hero" aria-labelledby="hero-heading">
-
-        <video
-            id="hero-video"
-            class="hero-video"
-            src="video/video.mp4"
-            poster="images/home_banner.jpg"
-            muted
-            loop
-            playsinline
-            preload="metadata"
-            tabindex="-1"
-            aria-hidden="true"></video>
 
         <div class="hero-overlay"></div>
 
@@ -71,15 +60,6 @@
                 <a class="btn btn-on-dark" href="booknow.php">Book a room</a>
                 <a class="btn btn-ghost-on-dark" href="#rooms">Explore our rooms</a>
             </div>
-        </div>
-
-        <!-- Injected by main.js only when the browser can control the video.
-             Without JavaScript the video never autoplays, so no control is
-             needed and none is shown. -->
-        <div class="hero-video-controls" id="hero-video-controls" hidden>
-            <button type="button" class="btn btn-sm btn-ghost-on-dark" id="hero-video-toggle">
-                Pause background video
-            </button>
         </div>
     </section>
 
@@ -317,7 +297,6 @@
     </div>
 </footer>
 
-<script src="main.js"></script>
 </body>
 
 </html>

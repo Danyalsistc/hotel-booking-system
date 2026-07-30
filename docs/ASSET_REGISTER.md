@@ -39,15 +39,25 @@ The room photographs are also referenced from the database: each row in
 
 | File | Used on | Source known? |
 |---|---|---|
-| `images/home_banner.jpg` | Home page hero — video poster frame and CSS background fallback | ❌ **Source confirmation required from team** |
-| `images/home_bg.jpg` | Background for the login, registration, logout, booking and legacy pages (`css.css`, `booknow.css`) | ❌ **Source confirmation required from team** |
+| `images/home_bg.jpg` | **Home page hero background** (`index.css`), and background for the login, registration, logout, booking and legacy pages (`css.css`, `booknow.css`) | ❌ **Source confirmation required from team** |
 | `images/reserve.jpg` | Banner background on all six room pages (`room.css`) | ❌ **Source confirmation required from team** |
+
+`images/home_bg.jpg` is now the most prominent image in the project — it is
+the first thing a visitor sees. Its licence is still **unknown**, so
+confirming its provenance is the highest priority in this register.
 
 ## 3. Video
 
-| File | Size | Used on | Source known? |
-|---|---|---|---|
-| `video/video.mp4` | ~4.7 MB | Home page hero background. Muted, looped, and started by `main.js` only when the visitor has not requested reduced motion | ❌ **Source confirmation required from team** |
+**No video files remain in this project.**
+
+`video/video.mp4` (~4.7 MB) was the home page hero background. It rendered
+noticeably blurry and played back with visible lag, so it was removed and the
+hero now uses the sharper, lighter `images/home_bg.jpg` instead. The file was
+deleted in the commit "Replace laggy hero video with static image" and remains
+recoverable from Git history if it is ever needed.
+
+Its provenance was never established either. If the file is ever restored, the
+same **source confirmation required from team** warning applies to it.
 
 ## 4. Currently unused assets
 
@@ -56,6 +66,7 @@ page or stylesheet**. They have been kept, not deleted.
 
 | File | Size | Note | Source known? |
 |---|---|---|---|
+| `images/home_banner.jpg` | ~22 KB | **Became unused** when the hero video was removed — it had been the video's poster frame. Kept, not deleted | ❌ **Source confirmation required from team** |
 | `images/logo.png` | ~278 KB | Not used. The current wordmark is text plus a CSS-drawn "HB" mark, so no logo image is needed | ❌ **Source confirmation required from team** |
 | `images/facebook.png` | ~0.5 KB | Not used — no social media links exist on the site | ❌ **Source confirmation required from team** |
 | `images/twitter.png` | ~0.6 KB | Not used — no social media links exist on the site | ❌ **Source confirmation required from team** |
