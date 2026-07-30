@@ -4,15 +4,22 @@
       "page": "homepage",
       "viewport": "desktop",
       "title": "Hotel Booking System - Book a Room",
-      "width": 1366,
-      "scrollW": 1366,
+      "width": 1440,
+      "scrollW": 1440,
       "horizontalOverflow": false,
       "imgTotal": 6,
       "imgBroken": [],
       "clippedElements": 0,
       "h1Count": 1,
       "imgsNoAlt": 0,
-      "focusableCount": 20
+      "focusableCount": 20,
+      "heroBackground": "home_bg.jpg",
+      "heroHeight": 480,
+      "videoElements": 0,
+      "videoControlButtons": 0,
+      "scriptsLoaded": [],
+      "roomColumns": 3,
+      "measured": "2026-07-30 (refreshed after the static-hero change)"
     },
     {
       "page": "homepage",
@@ -26,21 +33,35 @@
       "clippedElements": 0,
       "h1Count": 1,
       "imgsNoAlt": 0,
-      "focusableCount": 20
+      "focusableCount": 20,
+      "heroBackground": "home_bg.jpg",
+      "heroHeight": 416,
+      "videoElements": 0,
+      "videoControlButtons": 0,
+      "scriptsLoaded": [],
+      "roomColumns": 2,
+      "measured": "2026-07-30 (refreshed after the static-hero change)"
     },
     {
       "page": "homepage",
       "viewport": "mobile",
       "title": "Hotel Booking System - Book a Room",
-      "width": 390,
-      "scrollW": 390,
+      "width": 375,
+      "scrollW": 375,
       "horizontalOverflow": false,
       "imgTotal": 6,
       "imgBroken": [],
       "clippedElements": 0,
       "h1Count": 1,
       "imgsNoAlt": 0,
-      "focusableCount": 20
+      "focusableCount": 20,
+      "heroBackground": "home_bg.jpg",
+      "heroHeight": 461,
+      "videoElements": 0,
+      "videoControlButtons": 0,
+      "scriptsLoaded": [],
+      "roomColumns": 1,
+      "measured": "2026-07-30 (refreshed after the static-hero change)"
     },
     {
       "page": "room-twin",
@@ -344,17 +365,22 @@
     "newAlt": "Deluxe Suite - bedroom seen from the lounge",
     "pressed": "false,false,true,false"
   },
-  "video": {
-    "controlsVisible": true,
-    "label": "Play background video",
-    "pausedBefore": false,
-    "pausedAfter": true,
-    "toggled": true,
-    "poster": true
-  },
   "focus": {
     "focused": true,
     "outlineWidth": "3px",
     "tag": "A"
+  },
+  "hero": {
+    "type": "static image",
+    "backgroundImage": "images/home_bg.jpg",
+    "replacedVideo": "video/video.mp4 (removed in commit \"Replace laggy hero video with static image\")",
+    "videoElementsOnPage": 0,
+    "videoControlButtons": 0,
+    "scriptsLoadedOnHomepage": 0,
+    "note": "The homepage now loads no JavaScript at all. The previous \"video\" block in this file recorded the Play/Pause control and poster frame of the hero video, which no longer exists."
+  },
+  "evidenceNote": {
+    "homepageScreenshots": "homepage-desktop.png captured at 1440px, homepage-mobile.png captured at 375px, both refreshed on 2026-07-30 after the hero video was replaced with images/home_bg.jpg.",
+    "otherScreenshots": "All other screenshots in this folder date from the original Phase 5 run and are unaffected by the hero change."
   }
 }

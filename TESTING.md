@@ -427,9 +427,13 @@ exactly one `<h1>`, no image missing `alt`.**
 | Broken links / assets | None (all internal references resolve) |
 
 Screenshots: [`docs/evidence/`](docs/evidence/) — see
-[Evidence](#evidence). The home page screenshots there were captured while the
-hero still used the video; they show the video's poster frame rather than the
-current static hero image.
+[Evidence](#evidence). The home page screenshots were **refreshed on
+30 July 2026, after the hero video was replaced with the static
+`images/home_bg.jpg`**, so they show the current hero. `homepage-desktop.png`
+was captured at 1440px and `homepage-mobile.png` at 375px; both were verified
+to contain no video element and no video-control button, and the mobile
+capture has no horizontal overflow. The remaining screenshots in that folder
+date from the original Phase 5 run and are unaffected by the hero change.
 
 ---
 
@@ -649,8 +653,8 @@ personal data** — only fictional `example.test` accounts.
 
 | File | Shows |
 |---|---|
-| `homepage-desktop.png` | Full home page at 1366px |
-| `homepage-mobile.png` | Home page at 390px |
+| `homepage-desktop.png` | Full home page at **1440px** — static hero, refreshed 30 Jul 2026 |
+| `homepage-mobile.png` | Home page at **375px** — static hero, refreshed 30 Jul 2026 |
 | `room-twin-desktop.png` | Standard Twin Room page |
 | `room-details-desktop.png` / `-mobile.png` | Presidential Suite page |
 | `login-desktop.png` | Login form |
