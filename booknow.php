@@ -252,9 +252,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
             } else {
 
                 // --- Step 2: find one free physical room, locking it.
-                $available = 'available';
-                $pending   = BOOKING_BLOCKING_STATUSES[0];
-                $confirmed = BOOKING_BLOCKING_STATUSES[1];
+                //
+                // One placeholder per blocking status, generated from the
+                // constant rather than written out by hand, so this locking
+                // read and booking_count_available_rooms() can never disagree
+                // about which statuses hold a room. The list comes from a
+                // compile-time constant, never from the request, so the
+                // statement stays fully prepared.
+                //
+                // Unchanged: FOR UPDATE, the ORDER BY / LIMIT 1 allocation,
+                // and the overlap comparison itself.
+                $available    = 'available';
+                $blocking     = BOOKING_BLOCKING_STATUSES;
+                $blockingList = implode(', ', array_fill(0, count($blocking), '?'));
 
                 $roomStmt = $conn->prepare(
                     'SELECT r.id
@@ -265,7 +275,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
                               SELECT 1
                                 FROM bookings b
                                WHERE b.room_id = r.id
-                                 AND b.status IN (?, ?)
+                                 AND b.status IN (' . $blockingList . ')
                                  AND b.check_in  < ?
                                  AND b.check_out > ?
                             )
@@ -275,14 +285,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
                 );
 
                 // Date order: check_out first (existing.check_in < requested.check_out).
+                $roomArgs = array_merge(
+                    [$roomTypeId, $available],
+                    $blocking,
+                    [$checkOutStr, $checkInStr]
+                );
+
                 $roomStmt->bind_param(
-                    'isssss',
-                    $roomTypeId,
-                    $available,
-                    $pending,
-                    $confirmed,
-                    $checkOutStr,
-                    $checkInStr
+                    'is' . str_repeat('s', count($blocking)) . 'ss',
+                    ...$roomArgs
                 );
                 $roomStmt->execute();
                 $roomStmt->bind_result($allocatedRoomId);
@@ -367,15 +378,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
                         // Redirect-after-POST: refreshing the confirmation page
                         // cannot create a second booking.
                         //
+                        // The customer is now sent to a dedicated confirmation
+                        // page instead of straight to the dashboard, so the full
+                        // detail of what was just booked is shown once, clearly.
+                        // Only the reference travels in the URL - never a
+                        // database id - and booking-confirmation.php re-reads the
+                        // booking itself and checks it belongs to the signed-in
+                        // user before displaying anything.
+                        //
                         // The wording deliberately does not call the booking
                         // "confirmed": it is created with status pending and
                         // stays that way until an administrator confirms it.
-                        flash_set(
-                            'success',
-                            'Your booking request has been submitted. Its current status is '
-                                . 'pending. Your reference is ' . $reference . '.'
-                        );
-                        auth_redirect('customer-dashboard.php');
+                        auth_redirect('booking-confirmation.php?ref=' . rawurlencode($reference));
                     }
                 }
             }
@@ -576,22 +590,61 @@ $flash = flash_render();
                 <?php endif; ?>
             </div>
 
-            <!-- Filled in by booknow.js. Purely an on-screen estimate: the
-                 server recalculates everything from the database when the form
-                 is submitted. -->
-            <!-- Estimate: clearly marked as indicative. The authoritative
-                 figures are recalculated by the server on submission. -->
-            <div class="estimate" id="estimate" aria-live="polite">
-                <p class="estimate-label">Estimate</p>
-                <p class="estimate-value" id="estimate-text">
-                    Choose a room type and your dates to see an estimate.
-                </p>
+            <!-- Booking summary.
+
+                 Filled in by booknow.js from the data-capacity and data-price
+                 attributes already present on each <option>. It is a DISPLAY
+                 AID ONLY: there is deliberately no hidden field carrying a
+                 price, total or night count, so nothing here is submitted and
+                 nothing here can influence what the customer is charged. The
+                 server re-reads the rate and capacity from the locked
+                 room_types row and recalculates the nights and total itself.
+
+                 Without JavaScript the neutral "complete your dates" message
+                 simply stays visible and the form still submits normally. -->
+            <section class="booking-summary" aria-labelledby="summary-heading">
+                <h2 class="booking-summary-title" id="summary-heading">Booking summary</h2>
+
+                <div id="summary-live" aria-live="polite">
+
+                    <p class="booking-summary-empty" id="summary-empty">
+                        Complete your dates and guest details to see the booking estimate.
+                    </p>
+
+                    <dl class="booking-summary-list" id="summary-list" hidden>
+                        <div class="summary-row">
+                            <dt>Room type</dt><dd id="sum-room">&mdash;</dd>
+                        </div>
+                        <div class="summary-row">
+                            <dt>Check-in</dt><dd id="sum-checkin">&mdash;</dd>
+                        </div>
+                        <div class="summary-row">
+                            <dt>Check-out</dt><dd id="sum-checkout">&mdash;</dd>
+                        </div>
+                        <div class="summary-row">
+                            <dt>Nights</dt><dd id="sum-nights">&mdash;</dd>
+                        </div>
+                        <div class="summary-row">
+                            <dt>Guests</dt><dd id="sum-guests">&mdash;</dd>
+                        </div>
+                        <div class="summary-row">
+                            <dt>Nightly rate</dt><dd id="sum-rate">&mdash;</dd>
+                        </div>
+                        <div class="summary-row summary-row-total">
+                            <dt>Estimated total</dt><dd id="sum-total">&mdash;</dd>
+                        </div>
+                    </dl>
+
+                    <p class="booking-summary-problem" id="summary-problem" hidden></p>
+
+                </div>
+
                 <p class="estimate-note">
                     <strong>Guide only.</strong> The price you are charged and
                     the final availability check are always calculated on the
                     server when you submit this form.
                 </p>
-            </div>
+            </section>
 
             <div class="field availability-check">
                 <button type="button" class="btn btn-secondary btn-block" id="check-availability-btn">

@@ -1,0 +1,144 @@
+# =============================================================================
+#  Hotel Booking System - protect internal / development files
+#  ICT304 Capstone 2
+# -----------------------------------------------------------------------------
+#  Place: project web root (the same folder as index.html).
+#  Target: Apache 2.4 as shipped with XAMPP. Requires "AllowOverride All",
+#          which is the XAMPP default for C:/xampp/htdocs.
+#
+#  PURPOSE
+#  Before this file existed, everything under the project folder was reachable
+#  over HTTP - including the entire .git directory, database.sql and all of the
+#  project documentation. This file blocks those development artefacts.
+#
+#  SCOPE - this file deliberately does NOT touch the application itself.
+#  Nothing here matches .php, .html, .css, .js, .jpg, .jpeg, .png, .webp or
+#  .avif, so every page, stylesheet, script and image continues to be served
+#  exactly as before. No booking, login, session or database behaviour is
+#  affected.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+#  1. Turn off directory listings
+#
+#  Without this, requesting a folder that has no index file (for example
+#  /docs/) makes Apache generate a browsable list of its contents.
+#  The site root is unaffected: it still serves index.html via DirectoryIndex.
+# -----------------------------------------------------------------------------
+Options -Indexes
+
+
+# -----------------------------------------------------------------------------
+#  2. Block dot-files
+#
+#  Any file whose name begins with a dot: .gitignore, .env, .htpasswd, and
+#  this .htaccess itself. Note this matches the FILE NAME only, so it does not
+#  cover files inside the .git directory - rule 4 handles that.
+# -----------------------------------------------------------------------------
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+
+# -----------------------------------------------------------------------------
+#  3. Block development file types by extension
+#
+#    sql                  database.sql - the full schema and seed data
+#    md                   README.md, TESTING.md and the docs/*.md files
+#    log bak old orig
+#    save swp             editor and backup leftovers
+#    ini env dist         environment / configuration files
+#
+#  None of these are ever requested by a page in this application.
+# -----------------------------------------------------------------------------
+<FilesMatch "\.(sql|md|log|bak|old|orig|save|swp|ini|env|dist)$">
+    Require all denied
+</FilesMatch>
+
+
+# -----------------------------------------------------------------------------
+#  4. Block development directories
+#
+#  Rule 2 cannot reach files inside a dot-directory, because it only inspects
+#  the file name. These rules match on the request path instead.
+#
+#    .git/    the whole repository, including .git/config and .git/index
+#    docs/    design documentation and the screenshot evidence folder
+#
+#  Patterns are relative to the folder holding this .htaccess, so the project
+#  folder can be renamed without breaking them.
+#
+#  "- [F,L]" means: do not rewrite the URL, just return 403 Forbidden and stop.
+# -----------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule (^|/)\.git(/|$)  - [F,L]
+    RewriteRule ^docs(/|$)       - [F,L]
+</IfModule>
+
+
+# -----------------------------------------------------------------------------
+#  5. Security response headers
+#
+#  Set here rather than in PHP so they apply to EVERY response, including the
+#  six static room .html pages, index.html, the stylesheets, the scripts and
+#  the images - none of which run PHP and so could not set them for themselves.
+#
+#  "always" makes Apache attach the header to error responses (403/404/500)
+#  as well as successful ones.
+#
+#  NOTE ON HSTS: Strict-Transport-Security is deliberately NOT set. This
+#  project is served over plain http://localhost, and sending HSTS would tell
+#  the browser to refuse http for the whole host - breaking every other XAMPP
+#  project on the machine, and persisting long after this site is gone. It
+#  belongs in the production virtual host once real HTTPS is in place; see
+#  HOSTING.md for the recommended value.
+# -----------------------------------------------------------------------------
+<IfModule mod_headers.c>
+
+    # Stop the browser second-guessing a declared Content-Type. Without it, a
+    # file served as text/plain can be sniffed and executed as script.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Clickjacking: this application is never meant to be framed. Kept
+    # alongside CSP frame-ancestors for older browsers that do not read it.
+    Header always set X-Frame-Options "DENY"
+
+    # Never hand a booking URL to a third-party site. Pages such as
+    # booking-confirmation.php?ref=... carry a booking reference in the query
+    # string, so "same-origin" - which sends no referrer at all off-site - is
+    # the right level here rather than a partial policy.
+    Header always set Referrer-Policy "same-origin"
+
+    # This application asks for none of these capabilities, so they are turned
+    # off rather than left at the browser default.
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=()"
+
+    # -------------------------------------------------------------------------
+    #  Content-Security-Policy
+    #
+    #  This project was inspected before the policy was written, and it turns
+    #  out to need no exceptions at all:
+    #
+    #    - every <script> is an external same-origin file (booknow.js, room.js)
+    #    - there are no inline <script> blocks
+    #    - there are no inline event handlers (onclick=, onchange=, ...)
+    #    - there are no <style> blocks and no style="..." attributes
+    #    - every stylesheet, image and font is same-origin
+    #    - there are no CDNs, web fonts or third-party embeds
+    #    - the only network call from JavaScript is fetch() to
+    #      check_availability.php on this same origin
+    #
+    #  That means NEITHER 'unsafe-inline' NOR 'unsafe-eval' is required, which
+    #  is what makes this policy actually worth having - a CSP carrying
+    #  'unsafe-inline' for scripts provides very little XSS protection.
+    #
+    #  If a future change adds an inline script or style, it will be blocked
+    #  and visible in the browser console. The fix is to move it to a file,
+    #  NOT to relax this line.
+    # -------------------------------------------------------------------------
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+
+</IfModule>

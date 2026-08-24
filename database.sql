@@ -200,8 +200,26 @@ CREATE TABLE IF NOT EXISTS `bookings` (
     `number_of_nights`  SMALLINT UNSIGNED NOT NULL,
     `total_price`       DECIMAL(10,2) NOT NULL,
 
-    `status`            ENUM('pending','confirmed','cancelled','completed')
+    -- 'cancellation_requested' is APPENDED at the end of the list on purpose.
+    -- An ENUM is stored as the ordinal position of its value, so keeping the
+    -- original four members in their original order lets an existing database
+    -- adopt this schema without rewriting a single row
+    -- (see migrations/2026-08-20-add-cancellation-request.sql).
+    `status`            ENUM('pending','confirmed','cancelled','completed',
+                             'cancellation_requested')
                         NOT NULL DEFAULT 'pending',
+
+    -- What the booking was immediately before the customer asked to cancel,
+    -- so an administrator REJECTING the request can put it back exactly as it
+    -- was. A request may begin from 'pending' or from 'confirmed', and sending
+    -- every rejection back to 'confirmed' would silently approve bookings that
+    -- staff never approved.
+    --
+    -- Typed ENUM('pending','confirmed') rather than mirroring the full status
+    -- list: the database itself then makes it impossible for a rejection to
+    -- resurrect a cancelled or completed booking. NULL means "no cancellation
+    -- request is outstanding".
+    `previous_status`   ENUM('pending','confirmed') NULL DEFAULT NULL,
 
     `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -252,6 +270,52 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci
   COMMENT='Room reservations. No payment card data is stored.';
+
+
+-- ===========================================================================
+--  TABLE: login_attempts
+--  Failed login attempts, recorded per client IP address, used to throttle
+--  password guessing (see migrations/2026-08-21-add-login-attempts.sql).
+--
+--  WHY PER IP AND NOT PER EMAIL: counting failures against an email address
+--  would let anybody lock a known customer out of their own account just by
+--  guessing wrong at it, turning the throttle into a denial-of-service tool
+--  aimed at real users. Counting per IP throttles the guesser instead.
+--
+--  It also keeps the login response honest: the check runs BEFORE the email
+--  is looked up, so being throttled reveals nothing about whether an address
+--  is registered.
+--
+--  DELIBERATELY NOT STORED: no email, no username, no password, no hash, and
+--  no indication of which account was targeted. A row says only that some
+--  failed attempt came from an address at a time - nothing worth stealing and
+--  nothing that can be replayed.
+--
+--  RETENTION: the application deletes rows older than the throttle window
+--  every time the limiter runs, so IP addresses are not kept indefinitely.
+-- ===========================================================================
+CREATE TABLE IF NOT EXISTS `login_attempts` (
+    `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+
+    -- 45 characters is the longest possible textual IP address: an
+    -- IPv4-mapped IPv6 form such as
+    -- 'ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255'.
+    `ip_address`   VARCHAR(45) NOT NULL,
+
+    `attempted_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+
+    -- The only query this table serves is "how many failures from this IP
+    -- since <time>?", plus the matching delete. One composite index covers
+    -- both. There is no foreign key: the row is deliberately not tied to any
+    -- account, because we do not record which account was being tried.
+    KEY `idx_login_attempts_ip_time` (`ip_address`, `attempted_at`)
+
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='Failed login attempts per IP. No emails or passwords are stored.';
 
 
 -- ===========================================================================

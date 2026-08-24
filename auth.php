@@ -23,6 +23,38 @@ const AUTH_CSRF_KEY = 'csrf_token';
 /** Session key holding queued flash messages. */
 const AUTH_FLASH_KEY = 'flash_messages';
 
+/* ---------------------------------------------------------------------------
+ *  SESSION TIMEOUT POLICY
+ *
+ *  Two independent limits, both enforced server-side from timestamps held in
+ *  the session. Nothing here relies on JavaScript, and nothing is sent to the
+ *  browser that would let a visitor extend their own session.
+ *
+ *    IDLE     - 30 minutes since the last request. Long enough that a guest
+ *               can read room pages and fill in a booking form without being
+ *               interrupted, short enough that an unattended machine in a
+ *               shared space does not stay signed in all afternoon.
+ *
+ *    ABSOLUTE - 8 hours since signing in, however busy the session has been.
+ *               Caps the value of a stolen session cookie: it cannot be kept
+ *               alive indefinitely simply by using it.
+ *
+ *  Both are deliberately modest for a booking prototype that holds names and
+ *  reservations but takes no payment details.
+ * ------------------------------------------------------------------------ */
+
+/** Seconds of inactivity after which an authenticated session is ended. */
+const AUTH_IDLE_TIMEOUT = 1800;          // 30 minutes
+
+/** Maximum total life of an authenticated session, however active. */
+const AUTH_ABSOLUTE_LIFETIME = 28800;    // 8 hours
+
+/** Session key: when this login began (Unix timestamp). */
+const AUTH_STARTED_KEY = 'auth_started_at';
+
+/** Session key: when this session was last seen (Unix timestamp). */
+const AUTH_LAST_SEEN_KEY = 'auth_last_seen_at';
+
 
 /* ===========================================================================
  *  SESSION
@@ -91,6 +123,111 @@ function auth_session_start(): void
     }
 
     session_start();
+
+    // Enforce the timeout policy the moment the session is available, so no
+    // page can act on an expired session's identity.
+    auth_enforce_timeouts();
+}
+
+/**
+ * Stamp a freshly authenticated session with its timing information.
+ *
+ * Called by login.php immediately after the session ID is regenerated. A
+ * session that reaches auth_enforce_timeouts() carrying a user_id but no
+ * stamps is treated as expired, so forgetting to call this fails CLOSED.
+ */
+function auth_mark_login(): void
+{
+    auth_session_start();
+
+    $now = time();
+
+    $_SESSION[AUTH_STARTED_KEY]   = $now;
+    $_SESSION[AUTH_LAST_SEEN_KEY] = $now;
+}
+
+/**
+ * Apply the idle and absolute session limits.
+ *
+ * Only authenticated sessions are affected, so anonymous visitors browsing
+ * room pages are never interrupted and never redirected.
+ *
+ * The static guard makes this safe against re-entry: expiring a session calls
+ * flash_set(), which calls auth_session_start() again.
+ */
+function auth_enforce_timeouts(): void
+{
+    static $ran = false;
+
+    if ($ran) {
+        return;
+    }
+
+    $ran = true;
+
+    if (!isset($_SESSION['user_id']) || (int) $_SESSION['user_id'] <= 0) {
+        return;
+    }
+
+    $now = time();
+
+    $startedAt  = isset($_SESSION[AUTH_STARTED_KEY]) && is_int($_SESSION[AUTH_STARTED_KEY])
+        ? $_SESSION[AUTH_STARTED_KEY]
+        : null;
+
+    $lastSeenAt = isset($_SESSION[AUTH_LAST_SEEN_KEY]) && is_int($_SESSION[AUTH_LAST_SEEN_KEY])
+        ? $_SESSION[AUTH_LAST_SEEN_KEY]
+        : null;
+
+    // The wording below says WHY the session ended but never how long the
+    // limits are, so the policy is not published to anyone probing the login
+    // page.
+    $reason = null;
+
+    if ($startedAt === null || $lastSeenAt === null) {
+        // Fail closed. A session carrying a user_id but no stamps was not
+        // issued by this code path.
+        $reason = 'Your session could not be verified. Please log in again.';
+
+    } elseif (($now - $lastSeenAt) >= AUTH_IDLE_TIMEOUT) {
+        $reason = 'You were signed out because your session was inactive. Please log in again.';
+
+    } elseif (($now - $startedAt) >= AUTH_ABSOLUTE_LIFETIME) {
+        $reason = 'You were signed out because your session reached its maximum length. Please log in again.';
+    }
+
+    if ($reason === null) {
+        // Still valid: slide the idle window forward.
+        $_SESSION[AUTH_LAST_SEEN_KEY] = $now;
+
+        return;
+    }
+
+    auth_expire_session($reason);
+}
+
+/**
+ * End an expired session and send the visitor to the login page.
+ *
+ * Empties the session, then regenerates the ID with delete_old_session=true so
+ * the expired session is removed from the server and cannot be resumed even if
+ * its cookie is replayed.
+ *
+ * What is left behind is a clean, EMPTY session - which is what carries the
+ * explanation to the login page, and is also why this cannot loop: the new
+ * session has no user_id, so login.php runs auth_enforce_timeouts() and
+ * returns immediately.
+ */
+function auth_expire_session(string $reason): void
+{
+    $_SESSION = [];
+
+    if (!headers_sent()) {
+        session_regenerate_id(true);
+    }
+
+    flash_set('error', $reason);
+    auth_redirect('login.php');
 }
 
 

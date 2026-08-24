@@ -30,6 +30,14 @@
     --color-accent:         #B08544;
     --color-accent-dark:    #8E6A34;
 
+    /* Accent brown dark enough to be READ, not just seen.
+       --color-accent-dark is fine for borders and rules, but as small bold
+       text it measures 4.34:1 on --color-surface-alt, just under the 4.5:1
+       WCAG 2.2 AA minimum for text below 18.66px bold. This darker shade of
+       the same brown measures 5.56:1 on that surface (5.91 on --color-bg,
+       6.32 on white) and is used wherever the accent has to carry words. */
+    --color-accent-text:    #7A5A2B;
+
     --color-bg:             #FAF7F2;
     --color-surface:        #FFFFFF;
     --color-surface-alt:    #F4F0E9;
@@ -122,6 +130,13 @@ body {
     color: var(--color-text);
     background-color: var(--color-bg);
     -webkit-font-smoothing: antialiased;
+
+    /* Long unbroken strings - a customer's name, an email address, a booking
+       reference - previously had nothing to break on and could push a card or
+       table cell wider than its container on narrow screens. This lets the
+       browser break inside a word only when there is no other option, so
+       normal text still wraps at spaces as before. */
+    overflow-wrap: break-word;
 }
 
 h1, h2, h3, h4 {
@@ -196,7 +211,15 @@ code {
     padding: 0;
     margin: -1px;
     overflow: hidden;
+
+    /* clip is deprecated but kept for older browsers; clip-path is the
+       standard replacement. Both are listed because this rule is what keeps
+       screen-reader-only text off screen - if the only property here were the
+       deprecated one, a browser that drops it would suddenly display every
+       hidden caption and label. */
     clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+
     white-space: nowrap;
     border: 0;
 }
@@ -317,8 +340,15 @@ code {
    Buttons
    =========================================================================== */
 
-.btn,
-button.btn {
+/* Base button.
+   The selector is deliberately just ".btn". An earlier version also listed
+   "button.btn", which has higher specificity (element + class) than the
+   variant rules below (class only). The result was that on a
+   <button class="btn btn-secondary"> the base rule's transparent border beat
+   .btn-secondary's border-colour, so those buttons rendered with no visible
+   outline - while the same variant on an <a> looked correct. ".btn" alone
+   still overrides the browser's default button styling. */
+.btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -534,6 +564,62 @@ button.btn {
     color: var(--color-primary);
 }
 
+/* A cancellation request is a PROVISIONAL state - the customer has asked, and
+   staff have not answered yet. The dashed border says that without relying on
+   hue: every other badge is solid, so this one is distinguishable even to a
+   reader who cannot separate the accent brown from the pending amber, and in
+   greyscale or a high-contrast mode. The badge text spells the state out in
+   full ("Cancellation requested"), so colour is never carrying the meaning. */
+.status-cancellation_requested {
+    background-color: var(--color-surface-alt);
+    border-color: var(--color-accent-dark);
+    border-style: dashed;
+
+    /* Text uses the darker accent: this label is 13px bold, which WCAG counts
+       as normal-size text, so it needs 4.5:1 rather than 3:1. The border can
+       stay on the lighter shade - a border is not text. */
+    color: var(--color-accent-text);
+
+    /* Badges are nowrap by default, which is right for one-word statuses. This
+       label is two words and, held on a single line, forced the Status column
+       to 190px on BOTH dashboards - enough to push the Actions column off the
+       side of the table. Allowed to wrap onto two lines it costs ~110px
+       instead. The full wording is still shown; only the line break changes.
+
+       overflow-wrap is reset to normal deliberately. The body rule sets
+       break-word so that long booking references cannot burst out of a narrow
+       cell, but inherited here it split the label as "Cancellatio / n
+       requested". This box must break between the two WORDS or not at all, so
+       max-width is set wide enough to hold the longest single word. */
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    max-width: 8rem;
+    line-height: 1.25;
+}
+
+/* Fallback for a status value the application does not have a label for.
+   Deliberately neutral: a status that has been added to the database but not
+   to booking-status.php shows as "Unknown" rather than leaking a raw column
+   value or silently rendering an unstyled badge. */
+.status-unknown {
+    background-color: var(--color-surface-alt);
+    border-color: var(--color-border-strong);
+    color: var(--color-text-muted);
+}
+
+/* Short explanatory line under a status badge, e.g. telling a customer their
+   cancellation request is still being reviewed. Sits beneath the badge rather
+   than beside it so it never widens the Status column. */
+.status-note {
+    display: block;
+    margin-top: var(--space-2);
+    max-width: 22ch;
+    font-size: var(--text-xs);
+    line-height: 1.35;
+    color: var(--color-text-muted);
+}
+
 /* ===========================================================================
    Site footer
    =========================================================================== */
@@ -574,6 +660,16 @@ button.btn {
 .footer-list li {
     margin-bottom: var(--space-2);
     font-size: var(--text-sm);
+}
+
+/* Footer links were only about 19px tall, which is an awkward tap target on a
+   phone. These are standalone navigation links rather than links inside a
+   sentence, so they are given the same comfortable 44px height used for
+   buttons elsewhere. The footer's layout and wrapping are unaffected. */
+.footer-list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
 }
 
 .footer-bottom {

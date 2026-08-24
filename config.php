@@ -86,11 +86,13 @@ $dbPass = hbs_env('DB_PASS', '');                // XAMPP default (blank)
 //  mysqli_sql_exception instead of silently returning false. That means a
 //  database problem can never be quietly ignored by calling code.
 //
-//  NOTE FOR LATER PHASES: login.php and register.php still use the old
-//  "if ($conn->query(...))" style, which relied on a false return value.
-//  Those two files are scheduled to be rewritten with prepared statements in
-//  the authentication phase; until then a failing query in them will surface
-//  as a logged exception rather than a printed MySQL error string.
+//  An earlier version of this comment warned that login.php and register.php
+//  still used the old "if ($conn->query(...))" style, which relied on a false
+//  return value. That is no longer true: both were rewritten with prepared
+//  statements during the authentication phase, and a search of the project
+//  now finds no ->query() call in any application file. Every database access
+//  goes through prepare()/bind_param()/execute() and is wrapped in a
+//  try/catch that logs the exception and shows the visitor a generic message.
 // ---------------------------------------------------------------------------
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 

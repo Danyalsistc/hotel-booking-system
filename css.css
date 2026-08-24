@@ -95,6 +95,14 @@
     margin-top: var(--space-2);
 }
 
+/* "Log in", "Create one" and "Return to the home page" were only about 19px
+   tall - a small tap target on a phone, and these are the only way out of the
+   authentication pages. Padding raises them to a comfortable size. */
+.auth-links a {
+    display: inline-block;
+    padding-block: var(--space-2);
+}
+
 /* ===========================================================================
    Legacy redirect pages
    =========================================================================== */

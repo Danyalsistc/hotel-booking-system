@@ -20,6 +20,17 @@
     color: var(--color-text-inverse);
 }
 
+/* Scrim over the banner photograph.
+
+   images/reserve.jpg carries its own typography ("Reserve Your Room") and
+   stock interface icons. Through the previous gradient - which faded to 0.66
+   opacity - that artwork showed through and visually competed with the real
+   page heading, so each room page appeared to carry two different headlines.
+
+   The scrim is now heavier and, crucially, does not fade below 0.86, so the
+   photograph reads as texture rather than as text. A slight left-to-right
+   gradient is kept so the banner still has depth. Colour is unchanged:
+   --color-primary-dark (#0C2A38). */
 .room-banner::before {
     content: '';
     position: absolute;
@@ -27,8 +38,9 @@
     z-index: -1;
     background: linear-gradient(
         100deg,
-        rgba(12, 42, 56, 0.88) 0%,
-        rgba(12, 42, 56, 0.66) 100%
+        rgba(12, 42, 56, 0.98) 0%,
+        rgba(12, 42, 56, 0.95) 55%,
+        rgba(12, 42, 56, 0.93) 100%
     );
 }
 
@@ -127,10 +139,6 @@
 .gallery-thumb[aria-pressed="true"] {
     border-color: var(--color-accent);
     box-shadow: var(--shadow-sm);
-}
-
-.gallery-thumb[aria-pressed="true"]::after {
-    content: '';
 }
 
 .gallery-hint {

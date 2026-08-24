@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/booking-lib.php';
+require_once __DIR__ . '/booking-status.php';
 
 require_login();
 
@@ -76,14 +78,6 @@ try {
     $loadError = 'We could not load your bookings right now. Please try again shortly.';
 }
 
-/** Format a Y-m-d date for display, falling back to the raw value. */
-function dash_date(string $value): string
-{
-    $date = DateTimeImmutable::createFromFormat('!Y-m-d', substr($value, 0, 10));
-
-    return $date === false ? $value : $date->format('D j M Y');
-}
-
 /** Format a DATETIME for display. */
 function dash_datetime(string $value): string
 {
@@ -109,7 +103,9 @@ function dash_datetime(string $value): string
  */
 function dash_status_guidance(array $bookings): array
 {
-    $counts = ['pending' => 0, 'confirmed' => 0, 'cancelled' => 0, 'completed' => 0];
+    // Keys are in the order the sentences should read, which is why this is
+    // built from BOOKING_STATUSES rather than written out again.
+    $counts = array_fill_keys(BOOKING_STATUSES, 0);
 
     foreach ($bookings as $booking) {
         $status = (string) ($booking['status'] ?? '');
@@ -128,6 +124,12 @@ function dash_status_guidance(array $bookings): array
         'confirmed' => [
             'One booking is confirmed: it has been approved by our staff.',
             '%d bookings are confirmed: they have been approved by our staff.',
+        ],
+        'cancellation_requested' => [
+            'One booking has a cancellation request waiting for our staff to review. '
+                . 'It is not cancelled yet, and it still holds your room until staff decide.',
+            '%d bookings have cancellation requests waiting for our staff to review. '
+                . 'They are not cancelled yet, and they still hold your rooms until staff decide.',
         ],
         'cancelled' => [
             'One booking has been cancelled and no longer holds a room.',
@@ -233,14 +235,14 @@ $flash = flash_render();
                         <tr>
                             <th scope="col">Reference</th>
                             <th scope="col">Room type</th>
-                            <th scope="col">Check-in</th>
-                            <th scope="col">Check-out</th>
+                            <th scope="col">Stay</th>
                             <th scope="col">Nights</th>
                             <th scope="col">Guests</th>
                             <th scope="col">Rate/night</th>
                             <th scope="col">Total</th>
                             <th scope="col">Status</th>
                             <th scope="col">Booked on</th>
+                            <th scope="col">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -250,8 +252,12 @@ $flash = flash_render();
                                     <code><?php echo e($booking['reference']); ?></code>
                                 </td>
                                 <td data-label="Room type"><?php echo e($booking['room_type']); ?></td>
-                                <td data-label="Check-in"><?php echo e(dash_date($booking['check_in'])); ?></td>
-                                <td data-label="Check-out"><?php echo e(dash_date($booking['check_out'])); ?></td>
+                                <?php /* Check-in and check-out share one cell, as they do on the
+                                         administrator dashboard. Two ~100px date columns plus the
+                                         new Actions column pushed this table 252px wider than its
+                                         container at 1440px, hiding the very button the column was
+                                         added for. Both dates are still shown in full. */ ?>
+                                <td data-label="Stay"><?php echo e(booking_format_stay($booking['check_in'], $booking['check_out'])); ?></td>
                                 <td data-label="Nights"><?php echo e((string) $booking['nights']); ?></td>
                                 <td data-label="Guests"><?php echo e((string) $booking['guests']); ?></td>
                                 <td data-label="Rate/night">
@@ -261,11 +267,43 @@ $flash = flash_render();
                                     <strong>AUD <?php echo e(number_format((float) $booking['total'], 2)); ?></strong>
                                 </td>
                                 <td data-label="Status">
-                                    <span class="status status-<?php echo e($booking['status']); ?>">
-                                        <?php echo e(ucfirst($booking['status'])); ?>
+                                    <span class="status <?php echo e(booking_status_class($booking['status'])); ?>">
+                                        <?php echo e(booking_status_label($booking['status'])); ?>
                                     </span>
+
+                                    <?php if ($booking['status'] === 'cancellation_requested'): ?>
+                                        <?php /* Text, not colour alone: the badge and this
+                                                 sentence both say what is happening, so the
+                                                 state is clear without relying on being able
+                                                 to distinguish the badge colours. */ ?>
+                                        <span class="status-note">
+                                            Waiting for staff to review your cancellation request.
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td data-label="Booked on"><?php echo e(dash_datetime($booking['created_at'])); ?></td>
+                                <td data-label="Actions">
+                                    <?php if (booking_status_can_request_cancellation($booking['status'])): ?>
+
+                                        <?php /* The booking is identified by its reference, not
+                                                 by a database row ID. The server re-checks both
+                                                 ownership and eligibility before changing
+                                                 anything - this button being present is a
+                                                 convenience, never the authority. */ ?>
+                                        <form action="customer-cancellation-request.php" method="post">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="reference" value="<?php echo e($booking['reference']); ?>">
+                                            <button type="submit" class="action-btn action-btn-wrap action-cancel">
+                                                Request cancellation<span class="visually-hidden"> for booking <?php echo e($booking['reference']); ?></span>
+                                            </button>
+                                        </form>
+
+                                    <?php elseif ($booking['status'] === 'cancellation_requested'): ?>
+                                        <span class="field-hint">Request sent</span>
+                                    <?php else: ?>
+                                        <span class="field-hint">No actions</span>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -277,7 +315,11 @@ $flash = flash_render();
                 <?php foreach (dash_status_guidance($bookings) as $sentence): ?>
                     <?php echo e($sentence); ?>
                 <?php endforeach; ?>
-                To change or cancel a booking, please contact the hotel.
+                To cancel a booking, use <strong>Request cancellation</strong>.
+                That sends your request to our staff for review rather than
+                cancelling immediately, so your room is held until they reply.
+                To change the dates or details of a booking, please contact the
+                hotel.
             </p>
 
         <?php endif; ?>

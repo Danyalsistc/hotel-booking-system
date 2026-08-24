@@ -65,7 +65,12 @@
    Estimate panel
    =========================================================================== */
 
-.estimate {
+/* ===========================================================================
+   Booking summary
+   Display only - the server recalculates every figure on submission.
+   =========================================================================== */
+
+.booking-summary {
     background-color: var(--color-primary-soft);
     border: 1px solid var(--color-border);
     border-left: 4px solid var(--color-primary);
@@ -74,19 +79,81 @@
     margin-bottom: var(--space-5);
 }
 
-.estimate-label {
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+.booking-summary-title {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-3);
+}
+
+/* Neutral "not enough information yet" message. */
+.booking-summary-empty {
     color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+/* A specific problem with what has been entered. Carries an icon-free text
+   message so the meaning never depends on colour alone. */
+.booking-summary-problem {
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-error-bg);
+    border-left: 4px solid var(--color-error);
+    color: var(--color-error);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.booking-summary-list {
     margin-bottom: var(--space-2);
 }
 
-.estimate-value {
+.summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row dt {
+    color: var(--color-text-muted);
+}
+
+.summary-row dd {
+    text-align: right;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+/* The total is the figure the customer cares about most. */
+.summary-row-total {
+    margin-top: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 2px solid var(--color-accent);
+    border-bottom: none;
+    font-size: var(--text-base);
+}
+
+.summary-row-total dt {
+    color: var(--color-text);
+    font-weight: 700;
+}
+
+.summary-row-total dd {
     font-family: var(--font-serif);
-    font-size: var(--text-lg);
+    font-size: var(--text-xl);
     color: var(--color-primary);
+}
+
+/* Belt and braces: some layout rules set display on these elements, which
+   would otherwise defeat the hidden attribute. */
+[hidden] {
+    display: none !important;
 }
 
 /* Visually subordinate to the estimate itself, so the distinction between an

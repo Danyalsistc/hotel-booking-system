@@ -32,9 +32,55 @@ const BOOKING_MAX_NIGHTS = 30;
 /** How far ahead a check-in date may be placed, in days. */
 const BOOKING_MAX_ADVANCE_DAYS = 365;
 
-/** Booking statuses that occupy a room and therefore block availability. */
-const BOOKING_BLOCKING_STATUSES = ['pending', 'confirmed'];
+/**
+ * Booking statuses that occupy a room and therefore block availability.
+ *
+ * 'cancellation_requested' MUST be in this list. A customer asking to cancel
+ * has not cancelled anything yet - an administrator may still reject the
+ * request, which puts the booking straight back to pending or confirmed. If
+ * the room were released the moment the request was raised, another customer
+ * could book it during the review window and the rejection would then produce
+ * two live bookings for the same room on the same dates.
+ *
+ * A room is released only when a booking actually reaches 'cancelled'.
+ *
+ * Note what has NOT changed: the overlap rule itself
+ * (existing.check_in < requested.check_out AND existing.check_out >
+ * requested.check_in) and the locking transaction in booknow.php are exactly
+ * as they were. Only the set of statuses that count as "occupying a room" has
+ * grown, which is the minimum required for the new status to be safe.
+ */
+const BOOKING_BLOCKING_STATUSES = ['pending', 'confirmed', 'cancellation_requested'];
 
+
+/**
+ * Render a stay as one compact range, e.g. "8 - 10 Aug 2026".
+ *
+ * Lives here rather than in either dashboard because BOTH now use it. Check-in
+ * and check-out previously occupied two columns of roughly 100px each; on a
+ * table that also has to carry an Actions column, that is the difference
+ * between the administrator's controls being visible and being pushed off the
+ * side. Both dates are still shown in full; they simply share one cell.
+ */
+function booking_format_stay(string $in, string $out): string
+{
+    $a = DateTimeImmutable::createFromFormat('!Y-m-d', substr($in, 0, 10));
+    $b = DateTimeImmutable::createFromFormat('!Y-m-d', substr($out, 0, 10));
+
+    if ($a === false || $b === false) {
+        return $in . ' - ' . $out;
+    }
+
+    if ($a->format('Y-m') === $b->format('Y-m')) {
+        return $a->format('j') . ' - ' . $b->format('j M Y');
+    }
+
+    if ($a->format('Y') === $b->format('Y')) {
+        return $a->format('j M') . ' - ' . $b->format('j M Y');
+    }
+
+    return $a->format('j M Y') . ' - ' . $b->format('j M Y');
+}
 
 /**
  * Today's date in the hotel's timezone, with the time component stripped.
@@ -187,6 +233,13 @@ function booking_count_available_rooms(
     string $checkIn,
     string $checkOut
 ): int {
+    // One placeholder per blocking status. The placeholder string is built
+    // from a compile-time constant, never from user input, so this stays a
+    // fully prepared statement - and adding a status to
+    // BOOKING_BLOCKING_STATUSES can no longer leave this query behind.
+    $blocking     = BOOKING_BLOCKING_STATUSES;
+    $blockingList = implode(', ', array_fill(0, count($blocking), '?'));
+
     $sql = 'SELECT COUNT(*)
               FROM rooms r
              WHERE r.room_type_id = ?
@@ -195,28 +248,20 @@ function booking_count_available_rooms(
                      SELECT 1
                        FROM bookings b
                       WHERE b.room_id = r.id
-                        AND b.status IN (?, ?)
+                        AND b.status IN (' . $blockingList . ')
                         AND b.check_in  < ?
                         AND b.check_out > ?
                    )';
 
-    $available  = 'available';
-    $pending    = BOOKING_BLOCKING_STATUSES[0];
-    $confirmed  = BOOKING_BLOCKING_STATUSES[1];
+    $available = 'available';
 
     $stmt = $conn->prepare($sql);
 
     // Parameter order matters: the first date compared is check_out, because
     // the rule is "existing.check_in < requested.check_out".
-    $stmt->bind_param(
-        'isssss',
-        $roomTypeId,
-        $available,
-        $pending,
-        $confirmed,
-        $checkOut,
-        $checkIn
-    );
+    $args = array_merge([$roomTypeId, $available], $blocking, [$checkOut, $checkIn]);
+
+    $stmt->bind_param('is' . str_repeat('s', count($blocking)) . 'ss', ...$args);
 
     $stmt->execute();
     $stmt->bind_result($count);

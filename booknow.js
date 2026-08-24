@@ -40,9 +40,20 @@
     var checkOut     = document.getElementById('check_out');
     var guestCount   = document.getElementById('guest_count');
     var guestHint    = document.getElementById('guest-hint');
-    var estimateText = document.getElementById('estimate-text');
     var availBtn     = document.getElementById('check-availability-btn');
     var availResult  = document.getElementById('availability-result');
+
+    /* Booking summary elements. */
+    var sumEmpty   = document.getElementById('summary-empty');
+    var sumList    = document.getElementById('summary-list');
+    var sumProblem = document.getElementById('summary-problem');
+    var sumRoom    = document.getElementById('sum-room');
+    var sumCheckIn = document.getElementById('sum-checkin');
+    var sumCheckOut= document.getElementById('sum-checkout');
+    var sumNights  = document.getElementById('sum-nights');
+    var sumGuests  = document.getElementById('sum-guests');
+    var sumRate    = document.getElementById('sum-rate');
+    var sumTotal   = document.getElementById('sum-total');
 
     /* ---------------------------------------------------------------------
        Helpers
@@ -126,41 +137,109 @@
        The server still validates this against room_types.capacity.
        --------------------------------------------------------------------- */
 
-    function syncGuests() {
+    /** Capacity of the currently selected room type, or 0 if unknown. */
+    function selectedCapacity() {
         var option = selectedOption();
 
-        if (!option || !guestCount) {
-            return;
+        if (!option) {
+            return 0;
         }
 
         var capacity = parseInt(option.getAttribute('data-capacity'), 10);
 
-        if (!isFinite(capacity) || capacity < 1) {
+        return (isFinite(capacity) && capacity > 0) ? capacity : 0;
+    }
+
+    /**
+     * Reflect the chosen room's real capacity on the guest field.
+     *
+     * The guest number input starts with the largest capacity any room type
+     * offers, because the server renders it before a room type is chosen. Once
+     * one IS chosen, narrow the limit to that room's actual capacity and say so
+     * in words. The server still re-checks the count against the locked
+     * room_types row, so this is guidance, not enforcement.
+     */
+    function syncGuests() {
+        var capacity = selectedCapacity();
+
+        if (!capacity || !guestCount) {
             return;
         }
 
         guestCount.max = String(capacity);
 
-        if (parseInt(guestCount.value, 10) > capacity) {
-            guestCount.value = String(capacity);
-        }
-
         setText(
             guestHint,
-            'This room sleeps up to ' + capacity + ' guest'
-                + (capacity === 1 ? '' : 's') + '.'
+            'The ' + selectedRoomName() + ' sleeps up to ' + capacity
+                + ' guest' + (capacity === 1 ? '' : 's') + '.'
         );
     }
 
-    /* ---------------------------------------------------------------------
-       Estimate. Clearly labelled as a guide in the page itself.
-       --------------------------------------------------------------------- */
-
-    function updateEstimate() {
+    /** Display name of the chosen room type, without the price suffix. */
+    function selectedRoomName() {
         var option = selectedOption();
 
-        if (!option || !checkIn || !checkOut) {
-            setText(estimateText, 'Choose a room type and your dates to see an estimate.');
+        if (!option) {
+            return 'selected room';
+        }
+
+        /* Option text is "Deluxe Suite - sleeps 3 - AUD 250.00 per night". */
+        return option.textContent.split(' - ')[0].trim();
+    }
+
+    /* ---------------------------------------------------------------------
+       Booking summary.
+
+       Display only. Nothing computed here is submitted: there is no hidden
+       price, total or night-count field. The server recalculates all of it
+       from the locked room_types row when the form is posted.
+       --------------------------------------------------------------------- */
+
+    /** Show the neutral "not enough information yet" state. */
+    function summaryEmpty(message) {
+        if (sumEmpty) {
+            sumEmpty.textContent = message ||
+                'Complete your dates and guest details to see the booking estimate.';
+            sumEmpty.hidden = false;
+        }
+        if (sumList) { sumList.hidden = true; }
+        if (sumProblem) { sumProblem.hidden = true; sumProblem.textContent = ''; }
+    }
+
+    /** Show a specific problem with what the customer has entered. */
+    function summaryProblem(message) {
+        if (sumProblem) {
+            sumProblem.textContent = message;
+            sumProblem.hidden = false;
+        }
+        if (sumEmpty) { sumEmpty.hidden = true; }
+        if (sumList) { sumList.hidden = true; }
+    }
+
+    /** Format a date as "Sun 9 Aug 2026", matching the dashboards. */
+    function formatDate(d) {
+        var days   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return days[d.getUTCDay()] + ' ' + d.getUTCDate() + ' '
+             + months[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+    }
+
+    /** Consistent AUD formatting, matching the server's output. */
+    function money(amount) {
+        return 'AUD ' + amount.toFixed(2);
+    }
+
+    function updateSummary() {
+        var option = selectedOption();
+
+        if (!option) {
+            summaryEmpty('Choose a room type, your dates and the number of guests to see the booking estimate.');
+            return;
+        }
+
+        if (!checkIn || !checkOut || !checkIn.value || !checkOut.value) {
+            summaryEmpty();
             return;
         }
 
@@ -168,30 +247,61 @@
         var to   = parseDate(checkOut.value);
 
         if (!from || !to) {
-            setText(estimateText, 'Choose a room type and your dates to see an estimate.');
+            summaryProblem('Please enter both dates in the format YYYY-MM-DD.');
             return;
         }
 
         var nights = nightsBetween(from, to);
 
         if (nights < 1) {
-            setText(estimateText, 'The check-out date must be after the check-in date.');
+            summaryProblem('The check-out date must be after the check-in date.');
             return;
         }
+
+        if (nights > 30) {
+            summaryProblem('A single booking can cover at most 30 nights. Please shorten the stay.');
+            return;
+        }
+
+        var guests   = parseInt(guestCount ? guestCount.value : '', 10);
+        var capacity = selectedCapacity();
+
+        if (!isFinite(guests) || guests < 1) {
+            summaryEmpty('Enter how many guests are staying to see the booking estimate.');
+            return;
+        }
+
+        if (capacity && guests > capacity) {
+            summaryProblem(
+                'The ' + selectedRoomName() + ' sleeps up to ' + capacity
+                    + ' guest' + (capacity === 1 ? '' : 's') + ', but ' + guests
+                    + ' are entered. Please reduce the number of guests or choose a larger room.'
+            );
+            if (guestCount) { guestCount.setAttribute('aria-invalid', 'true'); }
+            return;
+        }
+
+        if (guestCount) { guestCount.removeAttribute('aria-invalid'); }
 
         var rate = parseFloat(option.getAttribute('data-price'));
 
-        if (!isFinite(rate)) {
-            setText(estimateText, nights + ' night' + (nights === 1 ? '' : 's') + '.');
-            return;
+        setText(sumRoom, selectedRoomName());
+        setText(sumCheckIn, formatDate(from));
+        setText(sumCheckOut, formatDate(to));
+        setText(sumNights, String(nights) + (nights === 1 ? ' night' : ' nights'));
+        setText(sumGuests, String(guests) + (guests === 1 ? ' guest' : ' guests'));
+
+        if (isFinite(rate)) {
+            setText(sumRate, money(rate) + ' per night');
+            setText(sumTotal, money(rate * nights));
+        } else {
+            setText(sumRate, 'Shown at confirmation');
+            setText(sumTotal, 'Shown at confirmation');
         }
 
-        setText(
-            estimateText,
-            nights + ' night' + (nights === 1 ? '' : 's')
-                + ' at AUD ' + rate.toFixed(2) + ' per night'
-                + ' - estimated total AUD ' + (rate * nights).toFixed(2) + '.'
-        );
+        if (sumEmpty) { sumEmpty.hidden = true; }
+        if (sumProblem) { sumProblem.hidden = true; sumProblem.textContent = ''; }
+        if (sumList) { sumList.hidden = false; }
     }
 
     /* ---------------------------------------------------------------------
@@ -260,7 +370,7 @@
     if (roomType) {
         roomType.addEventListener('change', function () {
             syncGuests();
-            updateEstimate();
+            updateSummary();
             setText(availResult, '');
         });
     }
@@ -268,20 +378,23 @@
     if (checkIn) {
         checkIn.addEventListener('change', function () {
             syncDates();
-            updateEstimate();
+            updateSummary();
             setText(availResult, '');
         });
     }
 
     if (checkOut) {
         checkOut.addEventListener('change', function () {
-            updateEstimate();
+            updateSummary();
             setText(availResult, '');
         });
     }
 
     if (guestCount) {
-        guestCount.addEventListener('change', updateEstimate);
+        /* "input" as well as "change" so the guest-capacity warning appears as
+           the number is typed or stepped, not only when the field is left. */
+        guestCount.addEventListener('input', updateSummary);
+        guestCount.addEventListener('change', updateSummary);
     }
 
     if (availBtn) {
@@ -296,5 +409,5 @@
     // Reflect whatever the server rendered on first load.
     syncDates();
     syncGuests();
-    updateEstimate();
+    updateSummary();
 }());
