@@ -2,27 +2,16 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Shared booking helpers
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  Small, dependency-light helpers shared by booknow.php and
- *  check_availability.php so the date rules and the availability overlap rule
- *  are written once and cannot drift apart.
+ * Shared booking helpers.
  *
- *  Contains no page output. Requires config.php to have supplied $conn before
- *  any function that takes a mysqli argument is called.
- * ===========================================================================
+ * Used by booknow.php and check_availability.php so the date rules and the
+ * availability overlap rule are written once. Produces no output; requires
+ * config.php to have supplied $conn before any function taking a mysqli.
  */
 
 /**
- * Timezone used for every "what is today" decision.
- *
- * This is an Australian demonstration hotel (prices are in AUD) and the
- * project is being completed in New South Wales, so dates are judged in
- * Australian Eastern time rather than in whatever timezone the web server
- * happens to be configured with. Change this one constant if the hotel is
- * located elsewhere.
+ * Timezone for every "what is today" decision. Dates are judged in Australian
+ * Eastern time rather than the server's timezone.
  */
 const BOOKING_TIMEZONE = 'Australia/Sydney';
 
@@ -37,31 +26,15 @@ const BOOKING_MAX_ADVANCE_DAYS = 365;
  *
  * 'cancellation_requested' MUST be in this list. A customer asking to cancel
  * has not cancelled anything yet - an administrator may still reject the
- * request, which puts the booking straight back to pending or confirmed. If
- * the room were released the moment the request was raised, another customer
- * could book it during the review window and the rejection would then produce
- * two live bookings for the same room on the same dates.
- *
- * A room is released only when a booking actually reaches 'cancelled'.
- *
- * Note what has NOT changed: the overlap rule itself
- * (existing.check_in < requested.check_out AND existing.check_out >
- * requested.check_in) and the locking transaction in booknow.php are exactly
- * as they were. Only the set of statuses that count as "occupying a room" has
- * grown, which is the minimum required for the new status to be safe.
+ * request, putting the booking back to pending or confirmed. If the room were
+ * released when the request was raised, someone else could book it during the
+ * review window and a rejection would produce two live bookings for the same
+ * room on the same dates. A room is released only at 'cancelled'.
  */
 const BOOKING_BLOCKING_STATUSES = ['pending', 'confirmed', 'cancellation_requested'];
 
 
-/**
- * Render a stay as one compact range, e.g. "8 - 10 Aug 2026".
- *
- * Lives here rather than in either dashboard because BOTH now use it. Check-in
- * and check-out previously occupied two columns of roughly 100px each; on a
- * table that also has to carry an Actions column, that is the difference
- * between the administrator's controls being visible and being pushed off the
- * side. Both dates are still shown in full; they simply share one cell.
- */
+/** Render a stay as one compact range, e.g. "8 - 10 Aug 2026". */
 function booking_format_stay(string $in, string $out): string
 {
     $a = DateTimeImmutable::createFromFormat('!Y-m-d', substr($in, 0, 10));
@@ -82,9 +55,7 @@ function booking_format_stay(string $in, string $out): string
     return $a->format('j M Y') . ' - ' . $b->format('j M Y');
 }
 
-/**
- * Today's date in the hotel's timezone, with the time component stripped.
- */
+/** Today's date in the hotel's timezone, with the time stripped. */
 function booking_today(): DateTimeImmutable
 {
     $now = new DateTimeImmutable('now', new DateTimeZone(BOOKING_TIMEZONE));
@@ -93,13 +64,9 @@ function booking_today(): DateTimeImmutable
 }
 
 /**
- * Strictly parse a YYYY-MM-DD date.
- *
- * Strict means the string must be exactly that format AND describe a real
- * calendar date. '2026-02-30' and '2026-13-01' are rejected rather than being
- * silently rolled forward, which is what a plain strtotime() would do.
- *
- * @return DateTimeImmutable|null Null when the input is not a valid date.
+ * Strictly parse a YYYY-MM-DD date. The string must be exactly that format and
+ * a real calendar date: '2026-02-30' is rejected rather than rolled forward,
+ * which is what a plain strtotime() would do.
  */
 function booking_parse_date(?string $value): ?DateTimeImmutable
 {
@@ -107,8 +74,6 @@ function booking_parse_date(?string $value): ?DateTimeImmutable
         return null;
     }
 
-    // Reject anything that is not literally 10 characters of YYYY-MM-DD before
-    // handing it to the date parser.
     if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
         return null;
     }
@@ -123,9 +88,8 @@ function booking_parse_date(?string $value): ?DateTimeImmutable
         return null;
     }
 
-    // createFromFormat accepts overflowing values such as 2026-02-30 and
-    // reports them as warnings, so those must be checked explicitly.
-    // PHP 8.2+ returns false from getLastErrors() when there were none.
+    // createFromFormat accepts overflowing values such as 2026-02-30 and only
+    // reports them as warnings, so they must be checked explicitly.
     $errors = DateTimeImmutable::getLastErrors();
 
     if (is_array($errors)
@@ -133,7 +97,7 @@ function booking_parse_date(?string $value): ?DateTimeImmutable
         return null;
     }
 
-    // Belt and braces: the parsed date must format back to the input exactly.
+    // The parsed date must format back to the input exactly.
     if ($date->format('Y-m-d') !== $value) {
         return null;
     }
@@ -142,11 +106,9 @@ function booking_parse_date(?string $value): ?DateTimeImmutable
 }
 
 /**
- * Validate a requested stay against the project's date business rules.
+ * Validate a requested stay against the date business rules.
  *
- * @param  DateTimeImmutable $checkIn
- * @param  DateTimeImmutable $checkOut
- * @return string|null  Error message, or null when the stay is acceptable.
+ * @return string|null Error message, or null when the stay is acceptable.
  */
 function booking_validate_stay(DateTimeImmutable $checkIn, DateTimeImmutable $checkOut): ?string
 {
@@ -176,10 +138,8 @@ function booking_validate_stay(DateTimeImmutable $checkIn, DateTimeImmutable $ch
 }
 
 /**
- * Number of nights between two dates.
- *
- * The stay occupies the half-open interval [check_in, check_out), so a guest
- * arriving on the 10th and leaving on the 12th stays 2 nights.
+ * Number of nights between two dates. The stay occupies the half-open interval
+ * [check_in, check_out), so the 10th to the 12th is 2 nights.
  */
 function booking_nights(DateTimeImmutable $checkIn, DateTimeImmutable $checkOut): int
 {
@@ -187,14 +147,11 @@ function booking_nights(DateTimeImmutable $checkIn, DateTimeImmutable $checkOut)
 }
 
 /**
- * Generate an unpredictable, customer-facing booking reference.
+ * Generate a customer-facing booking reference: HBS-YYYYMMDD-XXXXXXXX.
  *
- * Format: HBS-YYYYMMDD-XXXXXXXX  (21 characters, fits VARCHAR(32))
- *
- * The random component comes from random_bytes(), a cryptographically secure
- * source, so a reference cannot be guessed from another one. The original
- * prototype used "B" + Date.now() in the browser, which was both guessable
- * and forgeable.
+ * The random part uses random_bytes(), so a reference cannot be guessed from
+ * another one. The original prototype used "B" + Date.now() in the browser,
+ * which was both guessable and forgeable.
  */
 function booking_generate_reference(): string
 {
@@ -208,24 +165,16 @@ function booking_generate_reference(): string
 /**
  * Count how many physical rooms of a type are free for a date range.
  *
- * READ-ONLY. This is an indication for the user interface, not a reservation:
- * the count can be stale by the time a booking is submitted, which is exactly
- * why booknow.php re-checks inside a locking transaction before inserting.
+ * READ-ONLY - an indication for the interface, not a reservation. The count can
+ * be stale by the time a booking is submitted, which is why booknow.php
+ * re-checks inside a locking transaction before inserting.
  *
- * Availability rule - a room is free when NO pending or confirmed booking
- * overlaps the requested range:
- *
+ * Overlap rule - a room is free when no blocking booking satisfies:
  *      existing.check_in  <  requested.check_out
  *      AND existing.check_out >  requested.check_in
  *
- * Strict inequalities allow same-day changeover: a guest leaving on the 12th
- * does not block a guest arriving on the 12th.
- *
- * @param  mysqli $conn
- * @param  int    $roomTypeId
- * @param  string $checkIn  'Y-m-d'
- * @param  string $checkOut 'Y-m-d'
- * @return int    Number of available physical rooms.
+ * The strict inequalities allow same-day changeover: a guest leaving on the
+ * 12th does not block a guest arriving on the 12th.
  */
 function booking_count_available_rooms(
     mysqli $conn,
@@ -233,10 +182,8 @@ function booking_count_available_rooms(
     string $checkIn,
     string $checkOut
 ): int {
-    // One placeholder per blocking status. The placeholder string is built
-    // from a compile-time constant, never from user input, so this stays a
-    // fully prepared statement - and adding a status to
-    // BOOKING_BLOCKING_STATUSES can no longer leave this query behind.
+    // One placeholder per blocking status, built from a compile-time constant
+    // and never from user input, so the statement stays fully prepared.
     $blocking     = BOOKING_BLOCKING_STATUSES;
     $blockingList = implode(', ', array_fill(0, count($blocking), '?'));
 
@@ -257,8 +204,7 @@ function booking_count_available_rooms(
 
     $stmt = $conn->prepare($sql);
 
-    // Parameter order matters: the first date compared is check_out, because
-    // the rule is "existing.check_in < requested.check_out".
+    // Order matters: check_out is bound first, per the overlap rule above.
     $args = array_merge([$roomTypeId, $available], $blocking, [$checkOut, $checkIn]);
 
     $stmt->bind_param('is' . str_repeat('s', count($blocking)) . 'ss', ...$args);
@@ -274,7 +220,6 @@ function booking_count_available_rooms(
 /**
  * Load every active room type, ordered by price.
  *
- * @param  mysqli $conn
  * @return array<int, array{id:int, name:string, capacity:int, price:string}>
  */
 function booking_load_room_types(mysqli $conn): array
@@ -306,13 +251,11 @@ function booking_load_room_types(mysqli $conn): array
 }
 
 /**
- * Resolve a room-type NAME supplied in a URL to its ID.
+ * Resolve a room-type name from a URL to its ID.
  *
- * Room pages link here by name rather than by numeric ID, because the IDs in
- * database.sql are auto-increment values and are not guaranteed to be stable
- * across a re-import. The name is matched against the list already loaded
- * from the database, so an unrecognised value simply resolves to null and no
- * user input ever reaches a query.
+ * Room pages link by name because the auto-increment IDs in database.sql are
+ * not stable across a re-import. The name is matched against the list already
+ * loaded from the database, so no user input reaches a query.
  *
  * @param array<int, array{id:int, name:string, capacity:int, price:string}> $types
  */
@@ -332,5 +275,3 @@ function booking_resolve_room_type_name(array $types, ?string $name): ?int
 
     return null;
 }
-
-// No closing PHP tag.

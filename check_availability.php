@@ -2,26 +2,16 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Availability endpoint (read-only JSON)
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  GET check_availability.php?room_type_id=4&check_in=2026-08-10&check_out=2026-08-12
+ * Availability endpoint (read-only JSON).
+ *   GET check_availability.php?room_type_id=4&check_in=...&check_out=...
  *
- *  Returns how many physical rooms of a type are free for a date range.
+ * This endpoint DOES NOT RESERVE ANYTHING. It reports what is free at the
+ * instant it runs, and that answer can be stale by the time a booking is
+ * submitted - booknow.php re-checks inside a locking transaction, and that
+ * check is what actually decides whether a booking succeeds.
  *
- *  THIS ENDPOINT DOES NOT RESERVE ANYTHING. It only reports what is free at
- *  the instant it runs, and that answer can be out of date by the time a
- *  booking is submitted. booknow.php always re-checks availability inside a
- *  locking transaction before it inserts a booking, and that check - not this
- *  one - is what actually decides whether a booking succeeds.
- *
- *  Read-only by construction: it issues SELECT statements only and never
- *  creates or modifies a booking.
- *
- *  Responses are deliberately thin. Room numbers, row IDs, SQL text and
- *  database error messages are never exposed.
- * ===========================================================================
+ * Responses are deliberately thin: room numbers, row IDs and database errors
+ * are never exposed.
  */
 
 require_once __DIR__ . '/auth.php';

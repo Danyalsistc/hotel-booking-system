@@ -1,10 +1,9 @@
-/* ===========================================================================
+/*
    Hotel Booking System - Booking page
    ICT304 Capstone 2
-   ---------------------------------------------------------------------------
    Loaded AFTER theme.css, which supplies the tokens, header, footer, buttons,
    field and flash styles.
-   =========================================================================== */
+ */
 
 .booking-page {
     min-height: 100vh;
@@ -47,13 +46,13 @@
     border-bottom: 1px solid var(--color-border);
 }
 
-/* ===========================================================================
+/*
    Server-side errors
-
+  
    The page-level error is made deliberately prominent: it is the message that
    tells a customer their requested dates are unavailable, which is the single
    most important thing the form can say.
-   =========================================================================== */
+ */
 
 .booking-card > .flash-error {
     font-size: var(--text-base);
@@ -61,14 +60,12 @@
     border-left-width: 6px;
 }
 
-/* ===========================================================================
-   Estimate panel
-   =========================================================================== */
+/* Estimate panel */
 
-/* ===========================================================================
+/*
    Booking summary
    Display only - the server recalculates every figure on submission.
-   =========================================================================== */
+ */
 
 .booking-summary {
     background-color: var(--color-primary-soft);
@@ -166,9 +163,7 @@
     color: var(--color-text-muted);
 }
 
-/* ===========================================================================
-   Availability lookup
-   =========================================================================== */
+/* Availability lookup */
 
 .availability-check {
     margin-bottom: var(--space-5);
@@ -188,9 +183,7 @@
     font-size: var(--text-sm);
 }
 
-/* ===========================================================================
-   Submit
-   =========================================================================== */
+/* Submit */
 
 .booking-submit {
     padding-top: var(--space-5);
@@ -203,9 +196,7 @@
     color: var(--color-text-muted);
 }
 
-/* ===========================================================================
-   Responsive
-   =========================================================================== */
+/* Responsive */
 
 @media (max-width: 640px) {
     .booking-main {

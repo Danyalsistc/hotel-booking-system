@@ -1,30 +1,15 @@
-/* ===========================================================================
-   Hotel Booking System - Booking form progressive enhancement
-   ICT304 Capstone 2
-   ---------------------------------------------------------------------------
-   This script is OPTIONAL. Everything it does is convenience only:
+/*
+   Booking form progressive enhancement. Convenience only - it keeps check-out
+   after check-in, shows the guest limit and an estimated total, and asks
+   check_availability.php whether rooms are free.
 
-     - keeps the check-out date after the check-in date
-     - shows the guest limit for the chosen room type
-     - shows an estimated night count and price
-     - asks check_availability.php whether rooms are free
+   Deliberately NOT authoritative: it stores nothing, generates no reference,
+   and decides neither the price nor availability. The server recalculates all
+   of it and re-checks availability inside a locking transaction on every
+   submit, so the booking process still works if this file is deleted.
 
-   It is deliberately NOT authoritative. It does not:
-
-     - store bookings or any personal data in localStorage
-     - generate a booking reference
-     - decide the price that is charged
-     - decide whether a room is available
-     - redirect anyone to the administrator dashboard
-
-   The server recalculates the nights, the rate and the total from the
-   database, and re-checks availability inside a locking transaction, every
-   time the form is submitted. If this file were deleted the booking process
-   would still work correctly.
-
-   All output uses textContent, never innerHTML, so no value can be
-   interpreted as markup.
-   =========================================================================== */
+   All output uses textContent, never innerHTML.
+ */
 
 (function () {
     'use strict';
@@ -55,9 +40,7 @@
     var sumRate    = document.getElementById('sum-rate');
     var sumTotal   = document.getElementById('sum-total');
 
-    /* ---------------------------------------------------------------------
-       Helpers
-       --------------------------------------------------------------------- */
+    /* Helpers */
 
     /** Parse YYYY-MM-DD into a UTC date, or null. */
     function parseDate(value) {
@@ -112,9 +95,7 @@
         }
     }
 
-    /* ---------------------------------------------------------------------
-       Date guidance: check-out must always follow check-in.
-       --------------------------------------------------------------------- */
+    /* Date guidance: check-out must always follow check-in. */
 
     function syncDates() {
         if (!checkIn || !checkOut || !checkIn.value) {
@@ -132,10 +113,7 @@
         }
     }
 
-    /* ---------------------------------------------------------------------
-       Guest guidance: reflect the capacity of the chosen room type.
-       The server still validates this against room_types.capacity.
-       --------------------------------------------------------------------- */
+    /* Guest guidance. The server still validates against room_types.capacity. */
 
     /** Capacity of the currently selected room type, or 0 if unknown. */
     function selectedCapacity() {
@@ -151,13 +129,10 @@
     }
 
     /**
-     * Reflect the chosen room's real capacity on the guest field.
-     *
-     * The guest number input starts with the largest capacity any room type
-     * offers, because the server renders it before a room type is chosen. Once
-     * one IS chosen, narrow the limit to that room's actual capacity and say so
-     * in words. The server still re-checks the count against the locked
-     * room_types row, so this is guidance, not enforcement.
+     * Narrow the guest field to the chosen room's capacity. The field starts at
+     * the largest capacity any type offers, because the server renders it
+     * before a type is chosen. Guidance only - the server re-checks against the
+     * locked room_types row.
      */
     function syncGuests() {
         var capacity = selectedCapacity();
@@ -187,13 +162,9 @@
         return option.textContent.split(' - ')[0].trim();
     }
 
-    /* ---------------------------------------------------------------------
-       Booking summary.
-
-       Display only. Nothing computed here is submitted: there is no hidden
-       price, total or night-count field. The server recalculates all of it
-       from the locked room_types row when the form is posted.
-       --------------------------------------------------------------------- */
+    /* Booking summary. Display only - nothing computed here is submitted and
+       there is no hidden price, total or night-count field. The server
+       recalculates all of it from the locked room_types row. */
 
     /** Show the neutral "not enough information yet" state. */
     function summaryEmpty(message) {
@@ -304,9 +275,7 @@
         if (sumList) { sumList.hidden = false; }
     }
 
-    /* ---------------------------------------------------------------------
-       Availability lookup. Read-only; reserves nothing.
-       --------------------------------------------------------------------- */
+    /* Availability lookup. Read-only; reserves nothing. */
 
     function checkAvailability() {
         var option = selectedOption();
@@ -363,9 +332,7 @@
             });
     }
 
-    /* ---------------------------------------------------------------------
-       Wiring
-       --------------------------------------------------------------------- */
+    /* Wiring */
 
     if (roomType) {
         roomType.addEventListener('change', function () {

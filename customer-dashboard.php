@@ -2,16 +2,11 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Customer dashboard
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  Shows the signed-in customer's own bookings, read from MySQL.
+ * Customer dashboard - the signed-in customer's own bookings.
  *
- *  Ownership comes from the SESSION, never from the URL. The query filters on
- *  bookings.user_id = auth_user_id(), so there is no booking ID or customer ID
- *  a visitor could tamper with to see somebody else's reservations.
- * ===========================================================================
+ * Ownership comes from the session, never the URL: the query filters on
+ * bookings.user_id = auth_user_id(), so there is no ID a visitor could tamper
+ * with to see somebody else's reservations.
  */
 
 require_once __DIR__ . '/auth.php';
@@ -87,24 +82,16 @@ function dash_datetime(string $value): string
 }
 
 /**
- * Build the guidance shown beneath the bookings table, from the statuses that
- * are actually present in this customer's list.
- *
- * This replaces a hard-coded sentence that always described bookings as
- * pending and awaiting staff confirmation, which contradicted the Confirmed,
- * Cancelled and Completed badges shown in the very same table.
- *
- * One clause is produced per status that is genuinely present, with correct
- * singular/plural agreement, so a mixed list reads correctly too. Cancelled
- * and completed bookings are never described as pending.
+ * Guidance shown beneath the bookings table, built from the statuses actually
+ * present so a mixed list reads correctly and nothing is mis-described.
  *
  * @param  array<int, array{status: string}> $bookings
  * @return array<int, string> Plain-text sentences; the caller escapes them.
  */
 function dash_status_guidance(array $bookings): array
 {
-    // Keys are in the order the sentences should read, which is why this is
-    // built from BOOKING_STATUSES rather than written out again.
+    // Built from BOOKING_STATUSES so the sentences read in a fixed order.
+
     $counts = array_fill_keys(BOOKING_STATUSES, 0);
 
     foreach ($bookings as $booking) {

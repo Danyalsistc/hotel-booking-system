@@ -1,13 +1,12 @@
-/* ===========================================================================
+/*
    Hotel Booking System - Authentication and simple centred pages
    ICT304 Capstone 2
-   ---------------------------------------------------------------------------
    Used by login.php, register.php, logout.php and the legacy redirect pages.
    Loaded AFTER theme.css.
-
+  
    Note: this file previously began with an @import of Google Fonts. That has
    been removed - the site must work offline, so only system fonts are used.
-   =========================================================================== */
+ */
 
 .auth-page {
     min-height: 100vh;
@@ -25,9 +24,7 @@
     background-attachment: fixed;
 }
 
-/* ===========================================================================
-   Slim header (wordmark only - no navigation to distract from the task)
-   =========================================================================== */
+/* Slim header (wordmark only - no navigation to distract from the task) */
 
 .auth-header {
     padding: var(--space-5) var(--space-5) 0;
@@ -37,9 +34,7 @@
     font-size: var(--text-base);
 }
 
-/* ===========================================================================
-   Card
-   =========================================================================== */
+/* Card */
 
 .auth-main {
     flex: 1;
@@ -103,9 +98,7 @@
     padding-block: var(--space-2);
 }
 
-/* ===========================================================================
-   Legacy redirect pages
-   =========================================================================== */
+/* Legacy redirect pages */
 
 .legacy-notice p {
     color: var(--color-text-muted);
@@ -119,9 +112,7 @@
     margin-top: var(--space-5);
 }
 
-/* ===========================================================================
-   Footer
-   =========================================================================== */
+/* Footer */
 
 .auth-footer {
     padding: var(--space-5);
@@ -134,9 +125,7 @@
     color: #E7D3AE;
 }
 
-/* ===========================================================================
-   Responsive
-   =========================================================================== */
+/* Responsive */
 
 @media (max-width: 480px) {
     .auth-card {

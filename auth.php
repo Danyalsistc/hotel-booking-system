@@ -2,70 +2,30 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Authentication, session and CSRF helpers
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  Shared helper library included by every page that needs to know who the
- *  current visitor is. Contains NO database access and NO page output of its
- *  own, so it is safe to include before any HTML is produced.
+ * Authentication, session and CSRF helpers.
  *
- *  Typical use:
- *      require_once __DIR__ . '/auth.php';
- *      require_login();                  // or require_admin();
- *      echo e(auth_user_name());
- * ===========================================================================
+ * Included by every page that needs to know who the visitor is. Contains no
+ * database access and no output, so it is safe to include before any HTML.
  */
 
-/** Session key holding the CSRF token. */
 const AUTH_CSRF_KEY = 'csrf_token';
-
-/** Session key holding queued flash messages. */
 const AUTH_FLASH_KEY = 'flash_messages';
 
-/* ---------------------------------------------------------------------------
- *  SESSION TIMEOUT POLICY
- *
- *  Two independent limits, both enforced server-side from timestamps held in
- *  the session. Nothing here relies on JavaScript, and nothing is sent to the
- *  browser that would let a visitor extend their own session.
- *
- *    IDLE     - 30 minutes since the last request. Long enough that a guest
- *               can read room pages and fill in a booking form without being
- *               interrupted, short enough that an unattended machine in a
- *               shared space does not stay signed in all afternoon.
- *
- *    ABSOLUTE - 8 hours since signing in, however busy the session has been.
- *               Caps the value of a stolen session cookie: it cannot be kept
- *               alive indefinitely simply by using it.
- *
- *  Both are deliberately modest for a booking prototype that holds names and
- *  reservations but takes no payment details.
- * ------------------------------------------------------------------------ */
+// Session timeout policy. Both limits are enforced server-side from session
+// timestamps; nothing here relies on JavaScript.
+const AUTH_IDLE_TIMEOUT = 1800;          // 30 minutes since the last request
+const AUTH_ABSOLUTE_LIFETIME = 28800;    // 8 hours since signing in
 
-/** Seconds of inactivity after which an authenticated session is ended. */
-const AUTH_IDLE_TIMEOUT = 1800;          // 30 minutes
-
-/** Maximum total life of an authenticated session, however active. */
-const AUTH_ABSOLUTE_LIFETIME = 28800;    // 8 hours
-
-/** Session key: when this login began (Unix timestamp). */
 const AUTH_STARTED_KEY = 'auth_started_at';
-
-/** Session key: when this session was last seen (Unix timestamp). */
 const AUTH_LAST_SEEN_KEY = 'auth_last_seen_at';
 
 
-/* ===========================================================================
- *  SESSION
- * ======================================================================== */
-
 /**
- * Is the current request being served over HTTPS?
+ * Is the current request served over HTTPS?
  *
- * Deliberately does NOT trust X-Forwarded-Proto, which a client can forge.
- * On a plain http://localhost XAMPP install this returns false, which is what
- * keeps the Secure cookie flag off so local development still works.
+ * Deliberately does not trust X-Forwarded-Proto, which a client can forge.
+ * Returns false on http://localhost, which keeps the Secure cookie flag off
+ * for local development.
  */
 function auth_is_https(): bool
 {
@@ -81,10 +41,9 @@ function auth_is_https(): bool
 }
 
 /**
- * Start the session, but only when one is not already running.
- *
- * Safe to call repeatedly and from any page. Applies the hardening settings
- * before the session starts, because most of them have no effect afterwards.
+ * Start the session unless one is already running. Safe to call repeatedly.
+ * The hardening settings are applied first because most have no effect once
+ * the session has started.
  */
 function auth_session_start(): void
 {
@@ -92,17 +51,14 @@ function auth_session_start(): void
         return;
     }
 
-    // Cookies must already have been sent if output has started; bail out
-    // rather than emit a warning into the middle of a page.
     if (headers_sent()) {
         return;
     }
 
-    // Reject any session ID the browser invents that the server never issued.
-    // This is the main defence against session fixation.
+    // use_strict_mode rejects any session ID the server never issued, which is
+    // the main defence against session fixation. Cookies only - never accept a
+    // session ID from the URL.
     @ini_set('session.use_strict_mode', '1');
-
-    // Never accept a session ID from the URL query string.
     @ini_set('session.use_only_cookies', '1');
     @ini_set('session.use_trans_sid', '0');
 
@@ -110,10 +66,10 @@ function auth_session_start(): void
 
     if (PHP_VERSION_ID >= 70300) {
         session_set_cookie_params([
-            'lifetime' => 0,        // expires when the browser closes
+            'lifetime' => 0,
             'path'     => '/',
             'domain'   => '',
-            'secure'   => $secure,  // only over HTTPS; off on localhost
+            'secure'   => $secure,  // HTTPS only; off on localhost
             'httponly' => true,     // not readable by JavaScript
             'samesite' => 'Lax',    // blocks cross-site POST (CSRF defence)
         ]);
@@ -124,17 +80,14 @@ function auth_session_start(): void
 
     session_start();
 
-    // Enforce the timeout policy the moment the session is available, so no
-    // page can act on an expired session's identity.
+    // Enforced here so no page can act on an expired session's identity.
     auth_enforce_timeouts();
 }
 
 /**
- * Stamp a freshly authenticated session with its timing information.
- *
- * Called by login.php immediately after the session ID is regenerated. A
- * session that reaches auth_enforce_timeouts() carrying a user_id but no
- * stamps is treated as expired, so forgetting to call this fails CLOSED.
+ * Stamp a freshly authenticated session, called by login.php after the session
+ * ID is regenerated. A session carrying a user_id but no stamps is treated as
+ * expired, so forgetting this call fails closed.
  */
 function auth_mark_login(): void
 {
@@ -147,13 +100,11 @@ function auth_mark_login(): void
 }
 
 /**
- * Apply the idle and absolute session limits.
+ * Apply the idle and absolute session limits. Only authenticated sessions are
+ * affected, so anonymous browsing is never interrupted.
  *
- * Only authenticated sessions are affected, so anonymous visitors browsing
- * room pages are never interrupted and never redirected.
- *
- * The static guard makes this safe against re-entry: expiring a session calls
- * flash_set(), which calls auth_session_start() again.
+ * The static guard prevents re-entry: expiring a session calls flash_set(),
+ * which calls auth_session_start() again.
  */
 function auth_enforce_timeouts(): void
 {
@@ -179,14 +130,11 @@ function auth_enforce_timeouts(): void
         ? $_SESSION[AUTH_LAST_SEEN_KEY]
         : null;
 
-    // The wording below says WHY the session ended but never how long the
-    // limits are, so the policy is not published to anyone probing the login
-    // page.
+    // These messages say why the session ended but never state the limits.
     $reason = null;
 
     if ($startedAt === null || $lastSeenAt === null) {
-        // Fail closed. A session carrying a user_id but no stamps was not
-        // issued by this code path.
+        // Fail closed: a user_id with no stamps was not issued by this code.
         $reason = 'Your session could not be verified. Please log in again.';
 
     } elseif (($now - $lastSeenAt) >= AUTH_IDLE_TIMEOUT) {
@@ -207,16 +155,11 @@ function auth_enforce_timeouts(): void
 }
 
 /**
- * End an expired session and send the visitor to the login page.
+ * End an expired session and redirect to login.
  *
- * Empties the session, then regenerates the ID with delete_old_session=true so
- * the expired session is removed from the server and cannot be resumed even if
- * its cookie is replayed.
- *
- * What is left behind is a clean, EMPTY session - which is what carries the
- * explanation to the login page, and is also why this cannot loop: the new
- * session has no user_id, so login.php runs auth_enforce_timeouts() and
- * returns immediately.
+ * regenerate_id(true) deletes the old session server-side so it cannot be
+ * resumed by replaying its cookie. The clean empty session left behind carries
+ * the flash message, and having no user_id is why this cannot loop.
  */
 function auth_expire_session(string $reason): void
 {
@@ -231,13 +174,7 @@ function auth_expire_session(string $reason): void
 }
 
 
-/* ===========================================================================
- *  CURRENT USER
- * ======================================================================== */
-
-/**
- * Is somebody logged in on this request?
- */
+/** Is somebody logged in on this request? */
 function auth_is_logged_in(): bool
 {
     auth_session_start();
@@ -245,19 +182,13 @@ function auth_is_logged_in(): bool
     return isset($_SESSION['user_id']) && (int) $_SESSION['user_id'] > 0;
 }
 
-/**
- * Current user's database ID, or null when not logged in.
- */
+/** Current user's database ID, or null when not logged in. */
 function auth_user_id(): ?int
 {
     return auth_is_logged_in() ? (int) $_SESSION['user_id'] : null;
 }
 
-/**
- * Current user's full name, or null when not logged in.
- *
- * NOTE: the value is raw. Always pass it through e() before printing.
- */
+/** Current user's full name (raw - always print through e()). */
 function auth_user_name(): ?string
 {
     if (!auth_is_logged_in()) {
@@ -268,10 +199,8 @@ function auth_user_name(): ?string
 }
 
 /**
- * Current user's role: 'customer', 'admin', or null when not logged in.
- *
- * Anything unrecognised is downgraded to 'customer', so a corrupted session
- * can never grant administrative access.
+ * Current user's role. Anything unrecognised is downgraded to 'customer', so
+ * a corrupted session can never grant administrative access.
  */
 function auth_user_role(): ?string
 {
@@ -284,30 +213,20 @@ function auth_user_role(): ?string
     return in_array($role, ['customer', 'admin'], true) ? $role : 'customer';
 }
 
-/**
- * Is the current user an administrator?
- */
+/** Is the current user an administrator? */
 function auth_is_admin(): bool
 {
     return auth_user_role() === 'admin';
 }
 
-/**
- * The dashboard a given role belongs on after login.
- */
+/** The dashboard a given role belongs on after login. */
 function auth_dashboard_for_role(?string $role): string
 {
     return $role === 'admin' ? 'admin-dashboard.php' : 'customer-dashboard.php';
 }
 
 
-/* ===========================================================================
- *  ACCESS CONTROL
- * ======================================================================== */
-
-/**
- * Require any logged-in user. Sends guests to the login page.
- */
+/** Require any logged-in user. Sends guests to the login page. */
 function require_login(): void
 {
     if (auth_is_logged_in()) {
@@ -319,10 +238,8 @@ function require_login(): void
 }
 
 /**
- * Require an administrator.
- *
- * A guest is sent to login. A logged-in customer is sent back to their own
- * dashboard with an explanation - they are authenticated but not authorised.
+ * Require an administrator. A logged-in customer is sent back to their own
+ * dashboard: authenticated, but not authorised.
  */
 function require_admin(): void
 {
@@ -337,19 +254,12 @@ function require_admin(): void
 }
 
 
-/* ===========================================================================
- *  REDIRECTS
- * ======================================================================== */
-
 /**
- * Redirect to a path INSIDE this application, then stop.
+ * Redirect to a path inside this application, then stop.
  *
- * Only same-directory relative paths are accepted. Anything containing a
- * scheme, a host, a protocol-relative "//" prefix or a parent-directory
- * traversal is discarded and replaced with the home page, which prevents this
- * helper being abused as an open redirect.
- *
- * @param string $path e.g. 'login.php' or 'login.php?logged_out=1'
+ * Only same-directory relative paths are accepted; a scheme, host,
+ * protocol-relative "//" prefix or ".." traversal is discarded in favour of
+ * the home page. This is what stops the helper becoming an open redirect.
  */
 function auth_redirect(string $path): void
 {
@@ -379,16 +289,9 @@ function auth_redirect(string $path): void
 }
 
 
-/* ===========================================================================
- *  OUTPUT ESCAPING
- * ======================================================================== */
-
 /**
- * Escape a value for safe output inside HTML.
- *
- * Every piece of dynamic text printed by this application must go through
- * this function. ENT_QUOTES also escapes single quotes, so the result is safe
- * inside both double- and single-quoted attributes.
+ * Escape a value for output inside HTML. Every piece of dynamic text must go
+ * through this. ENT_QUOTES makes it safe inside either quote style.
  */
 function e(?string $value): string
 {
@@ -396,13 +299,7 @@ function e(?string $value): string
 }
 
 
-/* ===========================================================================
- *  CSRF PROTECTION
- * ======================================================================== */
-
-/**
- * Return this session's CSRF token, creating one on first use.
- */
+/** Return this session's CSRF token, creating one on first use. */
 function csrf_token(): string
 {
     auth_session_start();
@@ -414,29 +311,20 @@ function csrf_token(): string
     return $_SESSION[AUTH_CSRF_KEY];
 }
 
-/**
- * Discard the current CSRF token so the next call issues a fresh one.
- * Called after a privilege change (login) so the token does not outlive it.
- */
+/** Discard the token after a privilege change, so it does not outlive it. */
 function csrf_rotate(): void
 {
     auth_session_start();
     unset($_SESSION[AUTH_CSRF_KEY]);
 }
 
-/**
- * The hidden input to drop inside every state-changing <form>.
- */
+/** The hidden input to drop inside every state-changing <form>. */
 function csrf_field(): string
 {
     return '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
 }
 
-/**
- * Is the supplied token valid for this session?
- *
- * Uses hash_equals for a timing-safe comparison.
- */
+/** Is the token valid for this session? Uses a timing-safe comparison. */
 function csrf_validate(?string $token): bool
 {
     auth_session_start();
@@ -450,9 +338,7 @@ function csrf_validate(?string $token): bool
     return hash_equals($stored, $token);
 }
 
-/**
- * Validate the CSRF token on the current POST, or stop with HTTP 400.
- */
+/** Validate the CSRF token on the current POST, or stop with HTTP 400. */
 function csrf_require(): void
 {
     $token = isset($_POST['csrf_token']) && is_string($_POST['csrf_token'])
@@ -480,17 +366,8 @@ function csrf_require(): void
 }
 
 
-/* ===========================================================================
- *  FLASH MESSAGES
- *  One-shot messages that survive exactly one redirect.
- * ======================================================================== */
-
-/**
- * Queue a message for the next page load.
- *
- * @param string $type    'success' or 'error'
- * @param string $message Plain text; escaped when rendered.
- */
+// Flash messages: one-shot notices that survive exactly one redirect.
+/** Queue a message ('success' or 'error') for the next page load. */
 function flash_set(string $type, string $message): void
 {
     auth_session_start();
@@ -506,11 +383,7 @@ function flash_set(string $type, string $message): void
     $_SESSION[AUTH_FLASH_KEY][] = ['type' => $type, 'message' => $message];
 }
 
-/**
- * Return all queued messages and clear the queue.
- *
- * @return array<int, array{type: string, message: string}>
- */
+/** Return all queued messages and clear the queue. */
 function flash_take(): array
 {
     auth_session_start();
@@ -526,11 +399,7 @@ function flash_take(): array
     return $messages;
 }
 
-/**
- * Render queued flash messages as an accessible HTML block.
- *
- * role="alert" makes assistive technology announce the message immediately.
- */
+/** Render queued flash messages. role="alert" announces them immediately. */
 function flash_render(): string
 {
     $messages = flash_take();

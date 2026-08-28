@@ -2,18 +2,11 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Administrator dashboard
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  Protected by require_admin(). Every figure on this page is calculated by a
- *  query against MySQL - nothing is hard-coded, and nothing is read from
- *  localStorage.
+ * Administrator dashboard, protected by require_admin(). Every figure is
+ * counted from the database.
  *
- *  Customer email addresses are deliberately NOT displayed. The customer's
- *  name is enough to identify a booking on screen, and password hashes are
- *  never selected at all.
- * ===========================================================================
+ * Customer email addresses are deliberately NOT displayed - the name is enough
+ * to identify a booking - and password hashes are never selected.
  */
 
 require_once __DIR__ . '/auth.php';
@@ -26,13 +19,8 @@ require_admin();
 /** How many bookings to list on one page. */
 const ADMIN_RECENT_BOOKING_LIMIT = 50;
 
-/* ---------------------------------------------------------------------------
- *  Search and filter state.
- *
- *  Read from the query string so a filtered view can be bookmarked, shared
- *  between staff and returned to after a Confirm/Cancel action. Every value is
- *  validated inside admin_filters_read() before it is used.
- * ------------------------------------------------------------------------ */
+// Filter state comes from the query string, so a filtered view can be
+// bookmarked and returned to after an action. Validated in admin_filters_read().
 $filters = admin_filters_read($_GET);
 
 $totals = [
@@ -48,9 +36,6 @@ $matchCount   = 0;
 $loadError    = '';
 
 try {
-    /* -----------------------------------------------------------------------
-     *  Live totals. Each is a COUNT against the database.
-     * -------------------------------------------------------------------- */
 
     // Active physical rooms
     $stmt = $conn->prepare('SELECT COUNT(*) FROM rooms WHERE status = ?');
@@ -92,9 +77,8 @@ try {
     $totals['confirmed_bookings'] = (int) $count;
     $stmt->close();
 
-    // Outstanding cancellation requests. Counted separately so the dashboard
-    // can lead with them - a request sitting unreviewed is the one thing on
-    // this page that is actually waiting on the administrator.
+    // Outstanding cancellation requests - the one figure actually waiting on
+    // the administrator, so the dashboard leads with it.
     $stmt = $conn->prepare('SELECT COUNT(*) FROM bookings WHERE status = ?');
     $awaitingReview = 'cancellation_requested';
     $stmt->bind_param('s', $awaitingReview);
@@ -104,20 +88,13 @@ try {
     $totals['cancellation_requests'] = (int) $count;
     $stmt->close();
 
-    /* -----------------------------------------------------------------------
-     *  Booking list.
-     *
-     *  The WHERE clause is assembled from fixed SQL fragments only - each one
-     *  contains placeholders, never a user value. The values themselves are
-     *  collected separately and bound, so nothing typed by an administrator
-     *  ever reaches the SQL text.
-     *
-     *  Searchable fields are the booking reference, the customer's name and
-     *  the customer's email address. Email is searched but deliberately NOT
-     *  displayed in the table, so an administrator can find a booking from an
-     *  address a guest quotes without the dashboard putting every customer's
-     *  email on screen. Password hashes are never selected.
-     * -------------------------------------------------------------------- */
+    /* The WHERE clause is assembled from fixed SQL fragments containing only
+       placeholders; values are bound separately, so nothing typed by an
+       administrator reaches the SQL text.
+
+       Email is searchable but deliberately NOT displayed, so staff can find a
+       booking from an address a guest quotes without putting every customer's
+       email on screen. Password hashes are never selected. */
     $where  = [];
     $params = [];
     $types  = '';
@@ -149,8 +126,7 @@ try {
 
     $whereSql = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
 
-    /* How many bookings match in total, before the display limit is applied.
-       This is what lets the page say "showing 50 of 120 matching bookings". */
+    // Total matches before the display limit, for "showing 50 of 120".
     $countStmt = $conn->prepare(
         'SELECT COUNT(*)
            FROM bookings b

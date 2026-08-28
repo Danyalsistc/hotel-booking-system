@@ -2,28 +2,12 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Booking confirmation
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  Shown once, immediately after booknow.php commits a booking, so the
- *  customer can see exactly what was requested. It is read-only: it creates,
- *  updates and deletes nothing, and it never changes a booking's status.
+ * Booking confirmation. Read-only - it never changes a booking's status.
  *
- *  OWNERSHIP
- *  The booking reference arrives in the query string, so it must be treated as
- *  untrusted. The lookup is filtered by BOTH the reference AND the signed-in
- *  user's id, taken from the session:
- *
- *      WHERE b.booking_reference = ? AND b.user_id = ?
- *
- *  A customer who edits the URL to another customer's reference therefore
- *  matches zero rows and is sent back to their own dashboard - the page cannot
- *  be used to read somebody else's booking. The reference itself is also
- *  unguessable (random_bytes), but that is defence in depth, not the control.
- *
- *  No internal database id is ever placed in the URL or in the page.
- * ===========================================================================
+ * The reference arrives in the query string and is untrusted, so the lookup is
+ * filtered by BOTH the reference AND the signed-in user's id from the session.
+ * Editing the URL to another customer's reference matches zero rows. No
+ * internal database id is ever placed in the URL or the page.
  */
 
 require_once __DIR__ . '/auth.php';
@@ -32,18 +16,16 @@ require_once __DIR__ . '/booking-status.php';
 
 require_login();
 
-// Administrators manage bookings rather than place them, and this page shows a
-// customer their own booking. Keep the same rule booknow.php uses.
+// Administrators manage bookings rather than place them.
+
 if (auth_is_admin()) {
     auth_redirect('admin-dashboard.php');
 }
 
 $userId = (int) auth_user_id();
 
-/* ---------------------------------------------------------------------------
- *  Read and shape-check the reference before it goes near the database.
- *  Generated references look like HBS-20260730-A1B2C3D4.
- * ------------------------------------------------------------------------ */
+// Shape-check the reference (HBS-20260730-A1B2C3D4) before querying.
+
 $reference = isset($_GET['ref']) && is_string($_GET['ref']) ? trim($_GET['ref']) : '';
 
 if ($reference === '' || preg_match('/^[A-Za-z0-9-]{1,32}$/', $reference) !== 1) {
@@ -103,9 +85,8 @@ try {
     auth_redirect('customer-dashboard.php');
 }
 
-// No row means either the reference does not exist or it belongs to somebody
-// else. Both are answered identically, so this page cannot be used to discover
-// whether a reference exists.
+// A missing reference and someone else's reference are answered identically,
+// so this page cannot be used to discover whether a reference exists.
 if ($booking === null) {
     flash_set('error', 'That booking could not be found.');
     auth_redirect('customer-dashboard.php');

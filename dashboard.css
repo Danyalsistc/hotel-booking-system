@@ -1,10 +1,9 @@
-/* ===========================================================================
+/*
    Hotel Booking System - Customer and administrator dashboards
    ICT304 Capstone 2
-   ---------------------------------------------------------------------------
    Loaded AFTER theme.css, which supplies the tokens, header, footer, buttons,
    panels, flash messages, status badges and utilities used here.
-   =========================================================================== */
+ */
 
 .dash-page {
     min-height: 100vh;
@@ -44,10 +43,10 @@
     text-transform: uppercase;
 }
 
-/* ===========================================================================
+/*
    Totals cards (administrator)
    Every figure is counted from the database - none is hard-coded.
-   =========================================================================== */
+ */
 
 .cards {
     display: grid;
@@ -89,9 +88,7 @@
     color: var(--color-text-muted);
 }
 
-/* ===========================================================================
-   Data tables
-   =========================================================================== */
+/* Data tables */
 
 .table-intro {
     margin-bottom: var(--space-4);
@@ -107,11 +104,9 @@
     border-radius: var(--radius-md);
 }
 
-/* Both dashboard tables carry ten columns. The type size and cell padding are
-   kept tight so the full table - including the administrator's Confirm and
-   Cancel controls in the last column - fits without horizontal scrolling at
-   normal desktop widths. Below 1000px the table stops fitting at all, and the
-   stacked card layout further down takes over. */
+/* Both dashboard tables carry ten columns, so type size and padding are tight
+   enough for the Actions column to stay visible at desktop widths. Below
+   1000px the stacked card layout further down takes over. */
 .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -178,9 +173,7 @@
     padding-left: var(--space-5);
 }
 
-/* ===========================================================================
-   Administrator actions
-   =========================================================================== */
+/* Administrator actions */
 
 .action-group {
     display: flex;
@@ -222,30 +215,18 @@
     background-color: #6B1818;
 }
 
-/* ---------------------------------------------------------------------------
-   Cancellation review actions.
+/* Cancellation review actions. Colour follows the CONSEQUENCE, not the word:
+   approving ends the booking so it is red, rejecting restores it so it is
+   neutral navy rather than the green used for Confirm. */
 
-   These get their own classes rather than reusing Confirm/Cancel, because the
-   colour has to follow the CONSEQUENCE, not the word. Approving a cancellation
-   ends the booking and releases the room, so it is the destructive one and is
-   red. Rejecting it puts the booking back exactly as it was, so it is neutral
-   navy - reusing the green Confirm styling would suggest the booking had just
-   been approved by staff, which is not what rejecting a request does.
-
-   --------------------------------------------------------------------------- */
-
-/* Long-label action buttons.
-   .action-btn is nowrap, which suits "Confirm" and "Cancel" but makes
-   "Request cancellation" and "Approve cancellation" wide enough to push the
-   Actions column out of the table. These are allowed to wrap onto a second
-   line instead - the label is unchanged, only its line breaks are. */
+/* Long-label action buttons. .action-btn is nowrap, which suits "Confirm" but
+   makes "Request cancellation" wide enough to push the Actions column out of
+   the table, so these wrap onto a second line instead. */
 .action-btn-wrap {
     white-space: normal;
 
-    /* Break between words only. The body's overflow-wrap:break-word would
-       otherwise render this as "Request cancellati / on"; max-width is set
-       above the width of the longest single word so the break lands on the
-       space instead. */
+    /* Break between words only - the body's overflow-wrap would otherwise
+       render this as "Request cancellati / on". */
     overflow-wrap: normal;
     word-break: normal;
     max-width: 10rem;
@@ -283,9 +264,7 @@
     font-weight: 700;
 }
 
-/* ===========================================================================
-   Administrator search and filter bar
-   =========================================================================== */
+/* Administrator search and filter bar */
 
 .admin-filters {
     background-color: var(--color-surface-alt);
@@ -327,9 +306,7 @@
     margin-bottom: var(--space-4);
 }
 
-/* ===========================================================================
-   Booking confirmation page
-   =========================================================================== */
+/* Booking confirmation page */
 
 .confirmation-panel {
     max-width: 40rem;
@@ -424,9 +401,7 @@
     gap: var(--space-3);
 }
 
-/* ===========================================================================
-   Responsive
-   =========================================================================== */
+/* Responsive */
 
 @media (max-width: 1000px) {
     .cards {

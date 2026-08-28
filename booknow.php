@@ -2,25 +2,17 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Booking page (canonical)
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  GET  - shows the booking form, populated from the room_types table.
- *  POST - validates the request, finds a free physical room inside a locking
- *         transaction, and creates the booking.
+ * Booking page.
+ *   GET  - shows the form, populated from room_types.
+ *   POST - validates, finds a free room inside a locking transaction, and
+ *          creates the booking.
  *
- *  Guest name and email are NOT collected here. The customer is logged in, so
- *  those values already exist on their account; re-collecting them would
- *  duplicate account data and allow the two copies to disagree. The booking is
- *  linked to the account through bookings.user_id.
+ * Guest name and email are not collected: the customer is logged in and the
+ * booking is linked through bookings.user_id.
  *
- *  NOTHING about money or capacity is taken from the browser. The nightly
- *  rate, the room capacity, the night count and the total price are all read
- *  or calculated on the server from room_types.
- *
- *  No payment card information is collected anywhere. Payment is out of scope.
- * ===========================================================================
+ * NOTHING about money or capacity is taken from the browser. The nightly rate,
+ * capacity, night count and total are all read or calculated on the server
+ * from room_types. No payment card information is collected anywhere.
  */
 
 require_once __DIR__ . '/auth.php';
@@ -35,10 +27,9 @@ if (auth_is_admin()) {
 }
 
 /**
- * Room types are loaded defensively: if database.sql has not been imported
- * yet the tables will not exist, and an uncaught exception would render a
- * blank page (display_errors is off in production mode). An empty list is
- * handled further down with a clear on-screen message instead.
+ * Loaded defensively: if database.sql has not been imported the tables do not
+ * exist, and an uncaught exception would render a blank page. An empty list is
+ * handled further down with an on-screen message.
  */
 $roomTypes    = [];
 $roomTypeLoad = '';
@@ -50,9 +41,8 @@ try {
     $roomTypeLoad = 'Room information could not be loaded right now. Please try again shortly.';
 }
 
-// Ceiling for the guest field's HTML max attribute: the largest capacity any
-// room type offers. The real per-room-type limit is enforced on the server
-// against room_types.capacity; this only stops obviously absurd input early.
+// Ceiling for the guest field's HTML max attribute. The real per-room-type
+// limit is enforced on the server against room_types.capacity.
 $maxCapacity = 1;
 
 foreach ($roomTypes as $type) {
@@ -77,14 +67,9 @@ $values = [
     'guest_count'  => '1',
 ];
 
-/* ---------------------------------------------------------------------------
- *  GET - preselect a room type from the URL, e.g.
- *        booknow.php?room_type=Deluxe%20Suite
- *
- *  The value is resolved against the list already loaded from the database.
- *  An unknown name simply leaves nothing selected; the raw parameter is never
- *  used in a query and never printed.
- * ------------------------------------------------------------------------ */
+/* GET - preselect a room type from the URL, e.g. ?room_type=Deluxe%20Suite.
+   Resolved against the list already loaded from the database, so the raw
+   parameter is never used in a query and never printed. */
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
     $requested = isset($_GET['room_type']) && is_string($_GET['room_type'])
@@ -99,9 +84,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
 } else {
 
-    /* -----------------------------------------------------------------------
-     *  POST - create a booking
-     * -------------------------------------------------------------------- */
+    // POST - create a booking
 
     csrf_require();
 
@@ -115,7 +98,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     $values['check_out']    = $checkOutRaw;
     $values['guest_count']  = is_scalar($guestsRaw) ? (string) $guestsRaw : '';
 
-    // ----- Room type: must be a positive integer that exists in the list ---
+    // Room type: must be a positive integer that exists in the list.
     $roomTypeId = filter_var($roomTypeIdRaw, FILTER_VALIDATE_INT, [
         'options' => ['min_range' => 1],
     ]);
@@ -137,7 +120,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         }
     }
 
-    // ----- Dates ----------------------------------------------------------
+    // Dates
     $checkIn  = booking_parse_date($checkInRaw);
     $checkOut = booking_parse_date($checkOutRaw);
 
@@ -162,7 +145,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         }
     }
 
-    // ----- Guests: validated against the capacity stored in the database ---
+    // Guests: validated against the capacity stored in the database.
     $guestCount = filter_var($guestsRaw, FILTER_VALIDATE_INT, [
         'options' => ['min_range' => 1],
     ]);
@@ -178,52 +161,37 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         );
     }
 
-    /* -----------------------------------------------------------------------
-     *  Race-safe room allocation.
-     *
-     *  A check performed before the transaction would be worthless on its own:
-     *  two customers can both see "1 room left" and both submit. The allocation
-     *  below therefore happens entirely inside one transaction, using locking
-     *  reads.
-     *
-     *  Step 1 takes an exclusive row lock on the room_types row. That row acts
-     *  as an explicit mutex: any other booking attempt for the SAME room type
-     *  blocks here until this transaction finishes, so only one allocation for
-     *  a given type can be in flight at a time. Locking the room_types row
-     *  (rather than relying on subtler row-locking behaviour over the rooms and
-     *  bookings tables) is the conservative choice, and it behaves identically
-     *  on MySQL 8 and MariaDB.
-     *
-     *  Step 2 is also a locking read (FOR UPDATE). That matters under the
-     *  default REPEATABLE READ isolation level: a plain SELECT would be served
-     *  from the transaction's snapshot and could miss a booking another
-     *  transaction committed moments earlier. A locking read always sees the
-     *  latest committed data.
-     *
-     *  Lock ordering is always room_types then rooms, which keeps a consistent
-     *  ordering and avoids deadlocks between concurrent bookings.
-     * -------------------------------------------------------------------- */
+    /* Race-safe room allocation. Checking availability before the transaction
+       would be worthless on its own - two customers can both see "1 room left"
+       and both submit - so the whole allocation happens inside one transaction
+       using locking reads.
+
+       Step 1 locks the room_types row as an explicit mutex, so only one
+       allocation for a given type is ever in flight at a time.
+
+       Step 2 is also a locking read (FOR UPDATE). Under REPEATABLE READ a
+       plain SELECT is served from the transaction snapshot and could miss a
+       booking another transaction just committed.
+
+       Lock order is always room_types then rooms, which avoids deadlocks. */
     if ($errors === [] && $selectedType !== null && $checkIn !== null && $checkOut !== null) {
 
         $checkInStr  = $checkIn->format('Y-m-d');
         $checkOutStr = $checkOut->format('Y-m-d');
         $nights      = booking_nights($checkIn, $checkOut);
 
-        // Tracks whether a transaction is actually open. The catch block uses
-        // it so rollback() is only ever called when there is something to roll
-        // back - calling it otherwise would raise a warning. It also stays
-        // false if begin_transaction() itself fails, which is why that call now
-        // sits inside the try: a failure there is reported through exactly the
-        // same generic error path as any other database problem, with no raw
-        // database message shown to the visitor.
+        // Tracks whether a transaction is actually open, so the catch block
+        // only calls rollback() when there is something to roll back. It stays
+        // false if begin_transaction() itself fails, which is why that call
+        // sits inside the try.
         $inTransaction = false;
 
         try {
             $conn->begin_transaction();
             $inTransaction = true;
 
-            // --- Step 1: lock the room type row (mutex) and read the
-            //             authoritative capacity and price from the database.
+            // Step 1: lock the room type row (mutex) and read the
+            // authoritative capacity and price from the database.
             $typeStmt = $conn->prepare(
                 'SELECT name, capacity, price_per_night
                    FROM room_types
@@ -251,17 +219,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
                 );
             } else {
 
-                // --- Step 2: find one free physical room, locking it.
-                //
-                // One placeholder per blocking status, generated from the
-                // constant rather than written out by hand, so this locking
-                // read and booking_count_available_rooms() can never disagree
-                // about which statuses hold a room. The list comes from a
-                // compile-time constant, never from the request, so the
-                // statement stays fully prepared.
-                //
-                // Unchanged: FOR UPDATE, the ORDER BY / LIMIT 1 allocation,
-                // and the overlap comparison itself.
+                // Step 2: find one free physical room, locking it. One
+                // placeholder per blocking status, generated from the constant
+                // so this and booking_count_available_rooms() can never
+                // disagree about which statuses hold a room.
                 $available    = 'available';
                 $blocking     = BOOKING_BLOCKING_STATUSES;
                 $blockingList = implode(', ', array_fill(0, count($blocking), '?'));
@@ -311,9 +272,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
                     );
                 } else {
 
-                    // --- Step 3: money, calculated on the server from the
-                    //             locked database price. Integer cents keeps
-                    //             the arithmetic exact.
+                    // Step 3: money, calculated on the server from the locked
+                    // database price. Integer cents keeps the arithmetic exact.
                     $rateCents  = (int) round(((float) $lockedPrice) * 100);
                     $totalCents = $rateCents * $nights;
 
@@ -323,8 +283,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
                     $userId = (int) auth_user_id();
                     $roomId = (int) $allocatedRoomId;
 
-                    // --- Step 4: insert, retrying if the random reference
-                    //             happens to collide with an existing one.
+                    // Step 4: insert, retrying on a reference collision.
                     $inserted  = false;
                     $reference = '';
 
@@ -358,8 +317,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
                             $inserted = true;
 
                         } catch (mysqli_sql_exception $duplicate) {
-                            // 1062 = duplicate key. Only booking_reference is
-                            // unique on this table, so retry with a new one.
+                            // 1062 = duplicate key. booking_reference is the
+                            // only unique column, so retry with a new one.
                             if ((int) $duplicate->getCode() !== 1062) {
                                 throw $duplicate;
                             }
@@ -375,20 +334,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
                         $conn->commit();
                         $inTransaction = false;
 
-                        // Redirect-after-POST: refreshing the confirmation page
-                        // cannot create a second booking.
-                        //
-                        // The customer is now sent to a dedicated confirmation
-                        // page instead of straight to the dashboard, so the full
-                        // detail of what was just booked is shown once, clearly.
-                        // Only the reference travels in the URL - never a
-                        // database id - and booking-confirmation.php re-reads the
-                        // booking itself and checks it belongs to the signed-in
-                        // user before displaying anything.
-                        //
-                        // The wording deliberately does not call the booking
-                        // "confirmed": it is created with status pending and
-                        // stays that way until an administrator confirms it.
+                        // Redirect-after-POST, so refreshing cannot create a
+                        // second booking. Only the reference travels in the URL
+                        // - never a database id - and the confirmation page
+                        // re-checks that the booking belongs to this user.
                         auth_redirect('booking-confirmation.php?ref=' . rawurlencode($reference));
                     }
                 }
@@ -396,9 +345,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
         } catch (mysqli_sql_exception $exception) {
 
-            // Only roll back when a transaction was actually opened. If
-            // begin_transaction() was what failed, there is nothing to undo and
-            // calling rollback() here would itself raise a warning.
+            // Only roll back when a transaction was actually opened.
             if ($inTransaction) {
                 try {
                     $conn->rollback();

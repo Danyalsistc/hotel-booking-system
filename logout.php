@@ -2,17 +2,11 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Logout
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  POST ONLY, and a valid CSRF token is required.
+ * Logout. POST only with a valid CSRF token.
  *
- *  Logging out is a state-changing action, so it must not be reachable by a
- *  plain link. If it were, any <img src="logout.php"> on another site - or a
- *  browser prefetching a link - could sign the user out without their intent.
- *  A GET request therefore logs nobody out; it renders a confirmation form.
- * ===========================================================================
+ * Logging out is state-changing, so it must not be reachable by a plain link -
+ * otherwise an <img src="logout.php"> on another site could sign the user out.
+ * A GET request logs nobody out; it renders a confirmation form.
  */
 
 require_once __DIR__ . '/auth.php';

@@ -2,22 +2,12 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Customer registration
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  Single endpoint:
- *      GET  - renders the registration form
- *      POST - validates and creates a customer account
+ * Customer registration. GET renders the form, POST creates the account.
  *
- *  Security notes:
- *    - All SQL uses prepared statements; no user input is concatenated.
- *    - Passwords are stored only as password_hash() output.
- *    - The `role` column is NEVER accepted from the browser. It is omitted
- *      from the INSERT entirely so the database default ('customer') applies,
- *      which makes privilege escalation via a crafted form impossible.
- *    - Raw SQL and connection errors are logged, never displayed.
- * ===========================================================================
+ * The role column is never accepted from the browser - it is omitted from the
+ * INSERT so the database default ('customer') applies, which makes privilege
+ * escalation via a crafted form impossible. Passwords are stored only as
+ * password_hash() output.
  */
 
 require_once __DIR__ . '/auth.php';

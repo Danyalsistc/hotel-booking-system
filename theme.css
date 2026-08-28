@@ -1,28 +1,17 @@
-/* ===========================================================================
+/*
    Hotel Booking System - Shared design system
    ICT304 Capstone 2
-   ---------------------------------------------------------------------------
    Loaded FIRST on every page, before the page-specific stylesheet. Holds the
    design tokens plus the base and component styles that every page shares
    (skip link, header, footer, buttons, forms, flash messages, tables).
-
+  
    No external fonts, no CDN, no build step. The site works fully offline.
-   =========================================================================== */
+ */
 
 :root {
 
-    /* --- Colour ---------------------------------------------------------
-       A warm, restrained palette: deep petrol blue for structure and
-       actions, brass as a decorative accent, warm off-white surfaces.
-
-       Contrast (verified by calculation):
-         white on --color-primary ....... 11.9:1  (AAA)
-         --color-text on --color-bg ..... 15.6:1  (AAA)
-         --color-text-muted on --color-bg  5.8:1  (AA)
-         --color-accent on white ......... 3.3:1  - DECORATIVE ONLY.
-             Brass is used for borders, rules and large display text.
-             It is never used for small body text on a light background.
-    */
+    /* Colour. Brass (--color-accent) is 3.3:1 on white and is therefore
+       DECORATIVE ONLY - borders and rules, never small body text. */
     --color-primary:        #123B4F;
     --color-primary-dark:   #0C2A38;
     --color-primary-soft:   #E8EFF2;
@@ -30,12 +19,9 @@
     --color-accent:         #B08544;
     --color-accent-dark:    #8E6A34;
 
-    /* Accent brown dark enough to be READ, not just seen.
-       --color-accent-dark is fine for borders and rules, but as small bold
-       text it measures 4.34:1 on --color-surface-alt, just under the 4.5:1
-       WCAG 2.2 AA minimum for text below 18.66px bold. This darker shade of
-       the same brown measures 5.56:1 on that surface (5.91 on --color-bg,
-       6.32 on white) and is used wherever the accent has to carry words. */
+    /* Accent brown dark enough to be read: --color-accent-dark is only 4.34:1
+       on --color-surface-alt, under the 4.5:1 AA minimum. This is 5.56:1 and
+       is used wherever the accent has to carry words. */
     --color-accent-text:    #7A5A2B;
 
     --color-bg:             #FAF7F2;
@@ -58,9 +44,7 @@
 
     --color-focus:          #123B4F;
 
-    /* --- Typography ------------------------------------------------------
-       System font stacks only. Nothing is downloaded, so the site renders
-       identically with no network connection. */
+    /* Typography. System font stacks only - nothing is downloaded. */
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                  "Helvetica Neue", Arial, "Noto Sans", sans-serif;
     --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
@@ -78,7 +62,7 @@
     --leading-tight: 1.25;
     --leading-normal: 1.6;
 
-    /* --- Spacing (4px scale) --------------------------------------------- */
+    /* Spacing (4px scale) */
     --space-1: 0.25rem;
     --space-2: 0.5rem;
     --space-3: 0.75rem;
@@ -88,28 +72,26 @@
     --space-7: 3rem;
     --space-8: 4rem;
 
-    /* --- Radius ---------------------------------------------------------- */
+    /* Radius */
     --radius-sm:   4px;
     --radius-md:   8px;
     --radius-lg:   16px;
     --radius-pill: 999px;
 
-    /* --- Shadows --------------------------------------------------------- */
+    /* Shadows */
     --shadow-sm: 0 1px 3px rgba(31, 37, 35, 0.08);
     --shadow-md: 0 4px 14px rgba(31, 37, 35, 0.10);
     --shadow-lg: 0 12px 32px rgba(31, 37, 35, 0.16);
 
-    /* --- Layout ---------------------------------------------------------- */
+    /* Layout */
     --max-width: 1140px;
     --max-width-narrow: 720px;
 
-    /* --- Motion ---------------------------------------------------------- */
+    /* Motion */
     --transition: 160ms ease;
 }
 
-/* ===========================================================================
-   Base
-   =========================================================================== */
+/* Base */
 
 *,
 *::before,
@@ -131,11 +113,8 @@ body {
     background-color: var(--color-bg);
     -webkit-font-smoothing: antialiased;
 
-    /* Long unbroken strings - a customer's name, an email address, a booking
-       reference - previously had nothing to break on and could push a card or
-       table cell wider than its container on narrow screens. This lets the
-       browser break inside a word only when there is no other option, so
-       normal text still wraps at spaces as before. */
+    /* Lets the browser break inside a long unbroken string (a name, email or
+       booking reference) only when there is no other option. */
     overflow-wrap: break-word;
 }
 
@@ -170,9 +149,7 @@ code {
     border-radius: var(--radius-sm);
 }
 
-/* --- Focus ---------------------------------------------------------------
-   The native outline is REPLACED with a stronger, higher-contrast one - it is
-   never simply removed. */
+/* Focus. The native outline is REPLACED with a stronger one, never removed. */
 :focus-visible {
     outline: 3px solid var(--color-focus);
     outline-offset: 2px;
@@ -187,7 +164,7 @@ code {
     outline-color: #FFFFFF;
 }
 
-/* --- Reduced motion ------------------------------------------------------ */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
 
@@ -200,9 +177,7 @@ code {
     }
 }
 
-/* ===========================================================================
-   Utilities
-   =========================================================================== */
+/* Utilities */
 
 .visually-hidden {
     position: absolute;
@@ -214,9 +189,7 @@ code {
 
     /* clip is deprecated but kept for older browsers; clip-path is the
        standard replacement. Both are listed because this rule is what keeps
-       screen-reader-only text off screen - if the only property here were the
-       deprecated one, a browser that drops it would suddenly display every
-       hidden caption and label. */
+       screen-reader-only text off screen. */
     clip: rect(0, 0, 0, 0);
     clip-path: inset(50%);
 
@@ -256,9 +229,7 @@ code {
     padding-inline: var(--space-5);
 }
 
-/* ===========================================================================
-   Site header
-   =========================================================================== */
+/* Site header */
 
 .site-header {
     background-color: var(--color-primary);
@@ -336,9 +307,7 @@ code {
 
 .site-nav form { display: inline; }
 
-/* ===========================================================================
-   Buttons
-   =========================================================================== */
+/* Buttons */
 
 /* Base button.
    The selector is deliberately just ".btn". An earlier version also listed
@@ -420,9 +389,7 @@ code {
     font-size: var(--text-sm);
 }
 
-/* ===========================================================================
-   Forms
-   =========================================================================== */
+/* Forms */
 
 .field {
     margin-bottom: var(--space-5);
@@ -475,9 +442,7 @@ code {
     color: var(--color-error);
 }
 
-/* ===========================================================================
-   Flash / status messages
-   =========================================================================== */
+/* Flash / status messages */
 
 .flash {
     padding: var(--space-3) var(--space-4);
@@ -507,9 +472,7 @@ code {
     color: var(--color-text);
 }
 
-/* ===========================================================================
-   Panels / cards
-   =========================================================================== */
+/* Panels / cards */
 
 .panel {
     background-color: var(--color-surface);
@@ -525,10 +488,10 @@ code {
     margin-bottom: var(--space-4);
 }
 
-/* ===========================================================================
+/*
    Status badges
    Each badge carries its own text label, so colour is never the only cue.
-   =========================================================================== */
+ */
 
 .status {
     display: inline-block;
@@ -620,9 +583,7 @@ code {
     color: var(--color-text-muted);
 }
 
-/* ===========================================================================
-   Site footer
-   =========================================================================== */
+/* Site footer */
 
 .site-footer {
     background-color: var(--color-primary);
@@ -688,9 +649,7 @@ code {
     font-size: var(--text-sm);
 }
 
-/* ===========================================================================
-   Responsive
-   =========================================================================== */
+/* Responsive */
 
 @media (max-width: 900px) {
     :root {

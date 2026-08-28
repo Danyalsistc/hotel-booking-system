@@ -2,31 +2,19 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Customer cancellation request
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  POST ONLY. Requires a signed-in customer and a valid CSRF token.
+ * Customer cancellation request. POST only, signed-in customer and CSRF token
+ * required.
  *
- *  A customer CANNOT cancel a booking. This endpoint only ever moves a booking
- *  into 'cancellation_requested', which is a request for staff to review. The
- *  only code in the system that can write 'cancelled' is
- *  admin-booking-action.php, behind require_admin().
+ * A customer cannot cancel a booking. This endpoint only moves it into
+ * 'cancellation_requested' for staff to review; only admin-booking-action.php,
+ * behind require_admin(), can write 'cancelled'.
  *
- *  Permitted transition:
- *      pending   -> cancellation_requested   (previous_status = 'pending')
- *      confirmed -> cancellation_requested   (previous_status = 'confirmed')
+ * Permitted: pending or confirmed -> cancellation_requested, recording the old
+ * status in previous_status. Anything else changes zero rows.
  *
- *  Everything else - a second request against the same booking, a cancelled or
- *  completed booking, or a booking belonging to somebody else - changes zero
- *  rows and is reported as rejected.
- *
- *  The booking is identified by its REFERENCE rather than its primary key, so
- *  no internal row ID is put into the page. The reference alone is not
- *  authority: every statement below is additionally scoped to
- *  user_id = auth_user_id(), which comes from the session and can never be
- *  supplied by the browser.
- * ===========================================================================
+ * The booking is identified by reference, not primary key, so no internal row
+ * ID reaches the page. The reference is not authority on its own - every
+ * statement is also scoped to user_id from the session.
  */
 
 require_once __DIR__ . '/auth.php';
@@ -41,13 +29,8 @@ if (auth_is_admin()) {
     auth_redirect('admin-dashboard.php');
 }
 
-// ---------------------------------------------------------------------------
-//  A status change must never happen on a GET request.
-//
-//  Answered 405 and stopped, rather than redirecting - matching
-//  admin-booking-action.php and logout.php, so the advertised status code is
-//  the one actually sent.
-// ---------------------------------------------------------------------------
+// A status change must never happen on a GET request.
+
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
     if (!headers_sent()) {
@@ -75,13 +58,9 @@ csrf_require();
 
 $userId = (int) auth_user_id();
 
-/* ---------------------------------------------------------------------------
- *  Validate the reference before it reaches the database.
- *
- *  Same shape check booking-confirmation.php uses. This is belt-and-braces -
- *  the value is bound as a parameter regardless - but it keeps obviously
- *  malformed input out of the query entirely.
- * ------------------------------------------------------------------------ */
+// Shape-check the reference. The value is bound as a parameter regardless,
+// but this keeps obviously malformed input out of the query.
+
 $reference = isset($_POST['reference']) && is_string($_POST['reference'])
     ? trim($_POST['reference'])
     : '';
@@ -91,22 +70,12 @@ if ($reference === '' || preg_match('/^[A-Za-z0-9-]{1,32}$/', $reference) !== 1)
     auth_redirect('customer-dashboard.php');
 }
 
-/* ---------------------------------------------------------------------------
- *  Raise the request.
- *
- *  A single guarded UPDATE does the whole job. Ownership, eligibility and
- *  duplicate-prevention all live in the WHERE clause, so there is no
- *  read-then-write gap in which a booking could be cancelled by staff, or
- *  requested twice from two browser tabs, between the check and the write. A
- *  single UPDATE is atomic in InnoDB; affected_rows reports whether the
- *  booking really was in a state this action applies to.
- *
- *  The two assignments are ordered deliberately. MySQL and MariaDB evaluate a
- *  SET list left to right using the values current at that point, so
- *  previous_status is captured from the OLD status before status is
- *  overwritten. Writing them the other way round would store the new status
- *  and lose the very thing the column exists to remember.
- * ------------------------------------------------------------------------ */
+/* One guarded UPDATE does the whole job: ownership, eligibility and
+   duplicate-prevention all live in the WHERE clause, so there is no
+   read-then-write gap between the check and the write.
+
+   SET order is deliberate - MySQL evaluates the list left to right, so
+   previous_status captures the OLD status before status is overwritten. */
 $requested = 'cancellation_requested';
 $fromA     = BOOKING_CANCELLABLE_STATUSES[0];   // pending
 $fromB     = BOOKING_CANCELLABLE_STATUSES[1];   // confirmed
@@ -136,16 +105,9 @@ try {
         auth_redirect('customer-dashboard.php');
     }
 
-    /* -----------------------------------------------------------------------
-     *  Nothing changed. Work out why, so the message is useful rather than a
-     *  blanket failure.
-     *
-     *  This second read is ALSO scoped to user_id. That matters: it means a
-     *  customer probing another customer's reference gets exactly the same
-     *  "we could not find that booking" answer as for a reference that does
-     *  not exist at all, so the response cannot be used to discover whether
-     *  somebody else's booking reference is real.
-     * -------------------------------------------------------------------- */
+    /* Nothing changed - work out why so the message is useful. This read is
+       also scoped to user_id, so probing another customer's reference gives
+       the same answer as a reference that does not exist. */
     $currentStatus = null;
 
     $check = $conn->prepare(

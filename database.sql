@@ -2,28 +2,15 @@
 --  Hotel Booking System - Database Schema
 --  ICT304 Capstone 2
 -- ---------------------------------------------------------------------------
---  Target      : MySQL 8.0+ / MariaDB 10.4+ (XAMPP local development)
---  Engine      : InnoDB (required for foreign keys and transactions)
---  Charset     : utf8mb4 / utf8mb4_unicode_ci
+--  Target : MySQL 8.0+ / MariaDB 10.4+   Engine: InnoDB   Charset: utf8mb4
+--  Import : mysql -u root -p < database.sql   (or phpMyAdmin > Import)
 --
---  HOW TO IMPORT
---    phpMyAdmin : Import tab -> choose this file -> Go
---    Command line: mysql -u root -p < database.sql
+--  Safely re-runnable: CREATE ... IF NOT EXISTS and INSERT IGNORE throughout,
+--  and deliberately no DROP statements.
 --
---  RERUNNABILITY
---    This script is written to be safely re-runnable. It uses
---    CREATE ... IF NOT EXISTS and INSERT IGNORE throughout, so running it a
---    second time will NOT drop tables and will NOT overwrite existing rows.
---    There are deliberately NO "DROP TABLE" or "DROP DATABASE" statements.
---
---  SECURITY NOTES
---    * No payment card details are stored anywhere in this schema.
---      Payment processing is explicitly out of scope for this project.
---    * Only password HASHES are stored (see users.password_hash). Plaintext
---      passwords are never persisted.
---    * NO administrator account is seeded by this script. Creating an admin
---      with a known or predictable password would be a security defect.
---      See the "CREATING AN ADMINISTRATOR" note at the bottom of this file.
+--  No payment card details are stored anywhere. Only password hashes are kept,
+--  and NO administrator account is seeded - see the note at the end of this
+--  file for how to promote one.
 -- ===========================================================================
 
 
@@ -274,25 +261,15 @@ CREATE TABLE IF NOT EXISTS `bookings` (
 
 -- ===========================================================================
 --  TABLE: login_attempts
---  Failed login attempts, recorded per client IP address, used to throttle
---  password guessing (see migrations/2026-08-21-add-login-attempts.sql).
+--  Failed logins per client IP, used to throttle password guessing.
 --
---  WHY PER IP AND NOT PER EMAIL: counting failures against an email address
---  would let anybody lock a known customer out of their own account just by
---  guessing wrong at it, turning the throttle into a denial-of-service tool
---  aimed at real users. Counting per IP throttles the guesser instead.
+--  Per IP and not per email: counting against an email would let anybody lock
+--  a real customer out of their own account just by guessing wrong at it. The
+--  check also runs BEFORE the email is looked up, so being throttled reveals
+--  nothing about whether an address is registered.
 --
---  It also keeps the login response honest: the check runs BEFORE the email
---  is looked up, so being throttled reveals nothing about whether an address
---  is registered.
---
---  DELIBERATELY NOT STORED: no email, no username, no password, no hash, and
---  no indication of which account was targeted. A row says only that some
---  failed attempt came from an address at a time - nothing worth stealing and
---  nothing that can be replayed.
---
---  RETENTION: the application deletes rows older than the throttle window
---  every time the limiter runs, so IP addresses are not kept indefinitely.
+--  Stores no email, password, hash or target account. Rows older than the
+--  throttle window are deleted by the application on every run.
 -- ===========================================================================
 CREATE TABLE IF NOT EXISTS `login_attempts` (
     `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -366,19 +343,12 @@ VALUES
 
 
 -- ---------------------------------------------------------------------------
---  SEED (dev only): rooms - 2 physical rooms per type = 12 rooms.
+--  SEED (dev only): rooms - 2 per type = 12. The first digit is the floor,
+--  and each floor holds one room type.
 --
---  Demonstration numbering: the first digit is the floor, and each floor
---  holds one room type.
---      Floor 1 = Standard Twin    Floor 4 = Deluxe Suite
---      Floor 2 = Executive Twin   Floor 5 = Executive Suite
---      Floor 3 = Superior Suite   Floor 6 = Presidential Suite
---
---  Room 302 is seeded as 'maintenance' on purpose, so availability logic in
---  a later phase can be demonstrated excluding an out-of-service room.
---
---  room_type_id is resolved by NAME rather than hard-coded, so the seed does
---  not depend on auto-increment values.
+--  Room 302 is 'maintenance' on purpose, so availability logic can be shown
+--  excluding an out-of-service room. room_type_id is resolved by NAME, so the
+--  seed does not depend on auto-increment values.
 -- ---------------------------------------------------------------------------
 INSERT IGNORE INTO `rooms` (`room_number`, `room_type_id`, `status`)
 SELECT `seed`.`room_number`, `rt`.`id`, `seed`.`status`
@@ -403,17 +373,11 @@ JOIN `room_types` AS `rt`
 -- ===========================================================================
 --  CREATING AN ADMINISTRATOR
 -- ---------------------------------------------------------------------------
---  This script deliberately seeds NO user accounts, because shipping a known
---  or predictable admin password would be a security defect.
---
---  To create an administrator on your local machine, register normally
---  through the website once authentication is implemented, then promote that
---  account manually in phpMyAdmin:
+--  No user accounts are seeded, because shipping a known admin password would
+--  be a security defect. Register through the website, then promote that
+--  account:
 --
 --      UPDATE users SET role = 'admin' WHERE email = 'your.email@example.com';
---
---  Until authentication is implemented (a later phase), the users table will
---  simply remain empty. That is expected at this stage.
 -- ===========================================================================
 
 

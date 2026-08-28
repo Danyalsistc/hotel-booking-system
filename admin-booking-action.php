@@ -2,31 +2,22 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Administrator booking status changes
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  POST ONLY. Requires an administrator session and a valid CSRF token.
+ * Administrator booking status changes. POST only, admin session and CSRF
+ * token required.
  *
- *  This endpoint never accepts a status value from the browser. The form sends
- *  an ACTION ("confirm" or "cancel"), which is mapped here to a fixed pair of
- *  (required current status -> new status). An attacker cannot post
- *  status=completed, or move a cancelled booking back to confirmed.
+ * The browser never sends a status. It sends an ACTION, mapped here to a fixed
+ * (required current status -> new status) pair, so nobody can post
+ * status=completed or move a cancelled booking back to confirmed.
  *
- *  Permitted transitions:
- *      pending                -> confirmed
- *      pending                -> cancelled
- *      confirmed              -> cancelled
- *      cancellation_requested -> cancelled          (request approved)
- *      cancellation_requested -> previous_status    (request rejected)
+ * Permitted transitions:
+ *     pending                -> confirmed
+ *     pending                -> cancelled
+ *     confirmed              -> cancelled
+ *     cancellation_requested -> cancelled          (request approved)
+ *     cancellation_requested -> previous_status    (request rejected)
  *
- *  Anything else is rejected, including repeating a transition that has
- *  already happened.
- *
- *  Only this file - behind require_admin() - can write 'cancelled'. A customer
- *  raising a cancellation request (customer-cancellation-request.php) can only
- *  move a booking into 'cancellation_requested'.
- * ===========================================================================
+ * Only this file, behind require_admin(), can write 'cancelled'. A customer
+ * can only move a booking into 'cancellation_requested'.
  */
 
 require_once __DIR__ . '/auth.php';
@@ -37,32 +28,18 @@ require_once __DIR__ . '/booking-status.php';
 require_admin();
 
 /**
- * Where to send the administrator afterwards.
+ * Return the administrator to the filtered view they were working in.
  *
- * The dashboard's search and filter values are posted along with the action so
- * that confirming one booking in a filtered list does not throw the
- * administrator back to the unfiltered view.
- *
- * This CANNOT become an open redirect. The path is the hard-coded literal
- * 'admin-dashboard.php'; only the four known filter parameters are appended,
- * and each is re-validated by admin_filters_read() first - so a tampered
- * hidden field can at most produce a different (still valid) filter, never a
- * different destination. auth_redirect() then applies its own same-directory
- * check on top.
+ * This cannot become an open redirect: the path is a hard-coded literal and
+ * only the four known filter parameters are appended, each re-validated by
+ * admin_filters_read() first.
  */
 $returnTo = 'admin-dashboard.php' . admin_filters_query(admin_filters_read($_POST));
 
-// ---------------------------------------------------------------------------
-//  A status change must never happen on a GET request.
-// ---------------------------------------------------------------------------
+// A status change must never happen on a GET request. Respond 405 and stop -
+// calling auth_redirect() here would overwrite the status code with a 302.
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
-    // Respond 405 and stop here. An earlier version set 405 and then called
-    // auth_redirect(), whose header('Location: ...', true, 302) silently
-    // overwrote the status code - so the endpoint advertised 405 but actually
-    // answered 302. No booking was ever modified either way, but the status
-    // now matches what the code says, and matches logout.php's behaviour for
-    // the same situation.
     if (!headers_sent()) {
         http_response_code(405);
         header('Allow: POST');
@@ -87,16 +64,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 csrf_require();
 
 /**
- * Allowed actions.
+ * Allowed actions: the statuses a booking must be in, and the status it may
+ * move to.
  *
- * Each maps to the statuses a booking is allowed to be in for the action to
- * apply, plus the single status it may be moved to.
- *
- * 'restore' marks the one action whose destination is not a fixed value:
- * rejecting a cancellation request must return the booking to whatever it was
- * before the customer asked, which is read from bookings.previous_status. The
- * status is therefore never named by this file for that action, and never by
- * the browser for any of them.
+ * 'restore' marks the one action with no fixed destination - rejecting a
+ * request returns the booking to bookings.previous_status, so that status is
+ * never named by this file or by the browser.
  *
  * @var array<string, array{from: array<int, string>, to: ?string,
  *                          restore: bool, done: string}>
@@ -131,9 +104,6 @@ $allowedActions = [
     ],
 ];
 
-// ---------------------------------------------------------------------------
-//  Validate input
-// ---------------------------------------------------------------------------
 $bookingId = filter_var(
     $_POST['booking_id'] ?? null,
     FILTER_VALIDATE_INT,
@@ -157,42 +127,24 @@ if (!isset($allowedActions[$action])) {
 $rule = $allowedActions[$action];
 
 // ---------------------------------------------------------------------------
-//  Apply the change.
-//
-//  The UPDATE carries its own status guard in the WHERE clause:
-//
-//      WHERE id = ? AND status IN (...allowed current statuses...)
-//
-//  A single UPDATE statement is atomic in InnoDB, and because the guard is
-//  part of the same statement there is no read-then-write gap for a second
-//  administrator to slip through. affected_rows tells us whether the booking
-//  really was in a state the action applies to, so a repeated or invalid
-//  transition changes zero rows and is reported as rejected.
-// ---------------------------------------------------------------------------
-// One placeholder per permitted starting status, generated from the rule
-// rather than written out by hand, so an action may list as many as it needs.
+// The UPDATE carries its own status guard in the WHERE clause. A single UPDATE
+// is atomic in InnoDB, so there is no read-then-write gap for a second
+// administrator to slip through, and affected_rows reports whether the booking
+// really was in a state the action applies to.
 $fromList = implode(', ', array_fill(0, count($rule['from']), '?'));
 
 try {
     if ($rule['restore']) {
 
-        /* -------------------------------------------------------------------
-         *  Reject: put the booking back to its remembered previous status.
-         *
-         *  The new status is copied from the row itself - this file never
-         *  names it - so a request that began as 'pending' returns to
-         *  'pending' and one that began as 'confirmed' returns to 'confirmed'.
-         *  Nothing here can promote a booking staff never approved.
-         *
-         *  previous_status IS NOT NULL is a genuine guard, not decoration: if
-         *  a row ever reached 'cancellation_requested' without a remembered
-         *  status, this refuses to guess and changes nothing, rather than
-         *  writing NULL into a NOT NULL column or defaulting to 'confirmed'.
-         *
-         *  SET order matters and is deliberate. MySQL and MariaDB evaluate a
-         *  SET list left to right using the values current at that point, so
-         *  status reads previous_status before previous_status is cleared.
-         * ---------------------------------------------------------------- */
+        /* Reject: restore the remembered previous status. It is copied from
+           the row, so a request that began as 'pending' returns to 'pending'
+           and nothing here can promote a booking staff never approved.
+
+           previous_status IS NOT NULL is a real guard - without a remembered
+           status this changes nothing rather than guessing 'confirmed'.
+
+           SET order matters: MySQL evaluates the list left to right, so status
+           reads previous_status before it is cleared. */
         $stmt = $conn->prepare(
             'UPDATE bookings
                 SET status          = previous_status,
@@ -207,14 +159,10 @@ try {
 
     } else {
 
-        /* -------------------------------------------------------------------
-         *  Confirm, Cancel, Approve cancellation: a fixed destination status.
-         *
-         *  previous_status is cleared in the same statement. For Confirm and
-         *  Cancel it is already NULL and this is a no-op; for Approve it
-         *  discards the remembered status, because once a booking is cancelled
-         *  there is nothing left to reinstate.
-         * ---------------------------------------------------------------- */
+        /* Confirm, Cancel, Approve: a fixed destination status.
+           previous_status is cleared in the same statement - a no-op for
+           Confirm/Cancel, and for Approve it discards the remembered status
+           because a cancelled booking has nothing left to reinstate. */
         $newStatus = $rule['to'];
 
         $stmt = $conn->prepare(
@@ -235,9 +183,8 @@ try {
 
     if ($changed === 1) {
 
-        // Read the reference and the resulting status back, so a reinstated
-        // booking can be reported as what it actually became rather than as a
-        // vague "reinstated".
+        // Read back the resulting status so a reinstated booking is reported
+        // as what it actually became.
         $reference    = '';
         $finalStatus  = '';
 

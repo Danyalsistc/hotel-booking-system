@@ -1,19 +1,16 @@
-/* ===========================================================================
+/*
    Hotel Booking System - Homepage
    ICT304 Capstone 2
-   ---------------------------------------------------------------------------
    Loaded AFTER theme.css, which supplies the tokens, base styles, header,
    footer, buttons and utilities used here.
-
+  
    Note: the previous version of this file contained a global
    `img { width:100%; height:70% }` rule that resized every image on every
    page. It has been removed; image sizing is now scoped to the components
    that need it.
-   =========================================================================== */
+ */
 
-/* ===========================================================================
-   Hero
-   =========================================================================== */
+/* Hero */
 
 .hero {
     position: relative;
@@ -82,9 +79,7 @@
     gap: var(--space-3);
 }
 
-/* ===========================================================================
-   Sections
-   =========================================================================== */
+/* Sections */
 
 .section {
     padding-block: var(--space-8);
@@ -133,11 +128,11 @@
     margin-inline: auto;
 }
 
-/* ===========================================================================
+/*
    Room grid
    3 columns on large screens, 2 on tablets, 1 on phones.
    Nothing is hidden until hover: names, prices and links are always visible.
-   =========================================================================== */
+ */
 
 .room-grid {
     list-style: none;
@@ -213,9 +208,7 @@
     margin-top: auto;
 }
 
-/* ===========================================================================
-   How booking works
-   =========================================================================== */
+/* How booking works */
 
 .step-list {
     list-style: none;
@@ -256,9 +249,7 @@
     color: var(--color-text-muted);
 }
 
-/* ===========================================================================
-   Responsive
-   =========================================================================== */
+/* Responsive */
 
 @media (max-width: 1000px) {
     .step-list {

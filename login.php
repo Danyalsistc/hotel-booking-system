@@ -2,25 +2,12 @@
 declare(strict_types=1);
 
 /**
- * ===========================================================================
- *  Hotel Booking System - Login
- *  ICT304 Capstone 2
- * ---------------------------------------------------------------------------
- *  Single endpoint:
- *      GET  - renders the login form
- *      POST - authenticates the user and starts a privileged session
+ * Login. GET renders the form, POST authenticates and starts the session.
  *
- *  Security notes:
- *    - The user lookup uses a prepared statement selecting only the four
- *      columns needed. No user input is ever concatenated into SQL.
- *    - Reads users.password_hash, matching the schema in database.sql.
- *    - An unknown email and a wrong password produce the SAME generic
- *      message, so this page cannot be used to discover which addresses are
- *      registered.
- *    - The session ID is regenerated on success to defeat session fixation.
- *    - Only the user ID, display name and role are placed in the session.
- *      Passwords, hashes and email addresses are never stored there.
- * ===========================================================================
+ * An unknown email and a wrong password give the SAME generic message, so this
+ * page cannot be used to discover which addresses are registered. The session
+ * ID is regenerated on success to defeat session fixation, and only the user
+ * ID, name and role are stored in the session.
  */
 
 require_once __DIR__ . '/auth.php';
@@ -34,41 +21,26 @@ if (auth_is_logged_in()) {
 }
 
 /**
- * Decoy hash used to equalise response time when no account matches.
- *
- * Without this, a missing account would skip password_verify() and answer
- * measurably faster than a wrong password, leaking which emails exist. This
- * value is the hash of a random string, belongs to no account, and cannot be
- * used to log in.
+ * Decoy hash that equalises response time when no account matches. Without it
+ * a missing account would skip password_verify() and answer measurably faster
+ * than a wrong password, leaking which emails exist. It belongs to no account.
  */
 const LOGIN_DECOY_HASH = '$2y$12$C6UzMDM.H6dfI/f/IKcEe.5S1Sg9y1qYVGZ9YQ0F3rF3.mQe0Wq7C';
 
 /** Shown for every failed attempt, whatever the underlying cause. */
 const LOGIN_GENERIC_ERROR = 'The email address or password you entered is incorrect.';
 
-/* ---------------------------------------------------------------------------
- *  LOGIN RATE LIMITING
- *
- *  Failures are counted PER CLIENT IP inside a rolling window. Reaching the
- *  threshold refuses further attempts from that address until enough of the
- *  window has passed.
- *
- *  Why per IP rather than per email: counting against an email address would
- *  let anybody lock a real customer out of their own account just by guessing
- *  wrong at it. That turns a defence into a denial-of-service tool aimed at
- *  the victim. Counting per IP throttles the guesser instead.
- *
- *  The check also runs BEFORE the email is looked up, so being throttled says
- *  nothing whatsoever about whether an address is registered - the generic
- *  error behaviour of this page is preserved exactly.
- *
- *  Nobody is locked out permanently: the window is rolling, expired rows are
- *  deleted every time the limiter runs, and a successful sign-in clears the
- *  address immediately.
- *
- *  These helpers live here rather than in auth.php on purpose - auth.php is
- *  documented as containing no database access, and that stays true.
- * ------------------------------------------------------------------------ */
+/* Login rate limiting. Failures are counted per client IP in a rolling window.
+
+   Per IP rather than per email on purpose: counting against an email would let
+   anybody lock a real customer out of their own account just by guessing wrong
+   at it. The check also runs BEFORE the email is looked up, so being throttled
+   reveals nothing about whether an address is registered.
+
+   Nobody is locked out permanently - the window rolls, expired rows are pruned
+   on every run, and a successful sign-in clears the address.
+
+   These live here rather than in auth.php, which stays database-free. */
 
 /** Failures from one address within the window before attempts are refused. */
 const LOGIN_MAX_FAILURES = 5;
@@ -77,11 +49,8 @@ const LOGIN_MAX_FAILURES = 5;
 const LOGIN_WINDOW_SECONDS = 900;   // 15 minutes
 
 /**
- * The client's IP address, as a short safe string.
- *
- * REMOTE_ADDR only. X-Forwarded-For and friends are set by the client unless
- * a trusted proxy overwrites them, so honouring them here would let a guesser
- * reset their own throttle just by inventing a new header value.
+ * The client's IP address. REMOTE_ADDR only - honouring X-Forwarded-For would
+ * let a guesser reset their own throttle by inventing a header value.
  */
 function login_client_ip(): string
 {
@@ -90,8 +59,7 @@ function login_client_ip(): string
         : '';
 
     if ($ip === '' || filter_var($ip, FILTER_VALIDATE_IP) === false) {
-        // Bucket anything unrecognisable together rather than skipping the
-        // limiter entirely.
+        // Bucket anything unrecognisable rather than skipping the limiter.
         return 'unknown';
     }
 
@@ -99,13 +67,8 @@ function login_client_ip(): string
 }
 
 /**
- * Delete attempts that have aged out of the window.
- *
- * Keeps the table small and means IP addresses are not retained indefinitely.
- *
- * The interval is written from a PHP integer CONSTANT, never from request
- * data, so no user input reaches the SQL text. The address itself is always
- * bound as a parameter.
+ * Delete attempts that have aged out, so IP addresses are not kept
+ * indefinitely. The interval comes from a PHP constant, never request data.
  */
 function login_prune_attempts(mysqli $conn): void
 {
@@ -166,16 +129,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
     $values['email'] = $email;
 
-    /* -----------------------------------------------------------------------
-     *  Throttle check, before anything is looked up.
-     *
-     *  Placed first so that a throttled response cannot depend on - and
-     *  therefore cannot leak - whether the address exists.
-     *
-     *  Fails OPEN if the limiter itself errors: authentication still requires
-     *  the correct password, so a broken counter must not lock everybody out
-     *  of the site.
-     * -------------------------------------------------------------------- */
+    /* Throttle check first, so a throttled response cannot leak whether the
+       address exists. Fails open if the limiter itself errors - a broken
+       counter must not lock everybody out, and the password is still required. */
     $clientIp  = login_client_ip();
     $throttled = false;
 
@@ -187,8 +143,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 
     if ($throttled) {
-        // Keeps the generic wording and adds only that they should wait. No
-        // count, no remaining time, no hint about the account.
+        // Keeps the generic wording; no count, no timing, no account hint.
         $error = LOGIN_GENERIC_ERROR
                . ' Too many attempts have been made from this connection. '
                . 'Please wait a few minutes and try again.';
@@ -222,10 +177,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
             if ($found && $passwordCorrect) {
 
-                // New session ID now that privileges have changed.
+                // New session ID and CSRF token now privileges have changed.
                 session_regenerate_id(true);
-
-                // Retire the pre-login CSRF token along with the old session.
                 csrf_rotate();
 
                 $role = in_array((string) $userRole, ['customer', 'admin'], true)
@@ -239,16 +192,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 // Start the idle and absolute timeout clocks for this login.
                 auth_mark_login();
 
-                // A correct password clears this address immediately, so a
-                // customer who mistyped a few times is not left waiting out
-                // the window once they get it right.
+                // A correct password clears the address immediately.
                 login_clear_failures($conn, $clientIp);
 
                 auth_redirect(auth_dashboard_for_role($role));
             }
 
-            // Wrong password, or no such account - recorded identically, so
-            // the table itself holds no clue about which it was.
+            // Wrong password and unknown account are recorded identically.
             login_record_failure($conn, $clientIp);
 
             $error = LOGIN_GENERIC_ERROR;
